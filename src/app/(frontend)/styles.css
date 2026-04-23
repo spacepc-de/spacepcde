@@ -471,6 +471,56 @@ main {
   font-size: 1.25rem;
 }
 
+.content-page {
+  padding: 2.5rem 0 0;
+}
+
+.content-page__hero {
+  padding: 2rem 0 1rem;
+}
+
+.content-page__hero h1 {
+  max-width: 20ch;
+  font-size: clamp(2.4rem, 4vw, 4.2rem);
+}
+
+.content-page__card {
+  border: 1px solid var(--line);
+  border-radius: 1.6rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.content-page__body {
+  padding: 1.8rem;
+}
+
+.content-page__body h2,
+.content-page__body h3,
+.content-page__body h4 {
+  margin: 2rem 0 0.8rem;
+  letter-spacing: -0.03em;
+}
+
+.content-page__body h2:first-child,
+.content-page__body h3:first-child,
+.content-page__body h4:first-child,
+.content-page__body p:first-child,
+.content-page__body ul:first-child {
+  margin-top: 0;
+}
+
+.content-page__body p,
+.content-page__body li {
+  color: var(--ink-soft);
+  line-height: 1.8;
+}
+
+.content-page__body ul {
+  margin: 0 0 1.25rem;
+  padding-left: 1.2rem;
+}
+
 @media (max-width: 1080px) {
   .hero,
   .feature-story__layout,

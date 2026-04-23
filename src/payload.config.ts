@@ -16,6 +16,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { FooterLinks } from './collections/FooterLinks'
 import { NavigationLinks } from './collections/NavigationLinks'
+import { Pages } from './collections/Pages'
 import { ProductGroups } from './collections/ProductGroups'
 import { Tags } from './collections/Tags'
 
@@ -66,6 +67,7 @@ export default buildConfig({
     Tags,
     ProductGroups,
     BlogPosts,
+    Pages,
     Comments,
     NavigationLinks,
     FooterLinks,
