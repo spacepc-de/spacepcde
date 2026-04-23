@@ -1,9 +1,27 @@
 import * as migration_20250929_111647 from './20250929_111647'
+import * as migration_20260423_190000_blog from './20260423_190000_blog'
+import * as migration_20260423_210000_comments from './20260423_210000_comments'
+import * as migration_20260423_220000_layout_links from './20260423_220000_layout_links'
 
 export const migrations = [
   {
     up: migration_20250929_111647.up,
     down: migration_20250929_111647.down,
     name: '20250929_111647',
+  },
+  {
+    up: migration_20260423_190000_blog.up,
+    down: migration_20260423_190000_blog.down,
+    name: '20260423_190000_blog',
+  },
+  {
+    up: migration_20260423_210000_comments.up,
+    down: migration_20260423_210000_comments.down,
+    name: '20260423_210000_comments',
+  },
+  {
+    up: migration_20260423_220000_layout_links.up,
+    down: migration_20260423_220000_layout_links.down,
+    name: '20260423_220000_layout_links',
   },
 ]

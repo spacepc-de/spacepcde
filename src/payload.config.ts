@@ -8,8 +8,16 @@ import { CloudflareContext, getCloudflareContext } from '@opennextjs/cloudflare'
 import { GetPlatformProxyOptions } from 'wrangler'
 import { r2Storage } from '@payloadcms/storage-r2'
 
+import { Authors } from './collections/Authors'
+import { BlogPosts } from './collections/BlogPosts'
+import { Categories } from './collections/Categories'
+import { Comments } from './collections/Comments'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
+import { FooterLinks } from './collections/FooterLinks'
+import { NavigationLinks } from './collections/NavigationLinks'
+import { ProductGroups } from './collections/ProductGroups'
+import { Tags } from './collections/Tags'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -50,8 +58,39 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media],
+  collections: [
+    Users,
+    Media,
+    Authors,
+    Categories,
+    Tags,
+    ProductGroups,
+    BlogPosts,
+    Comments,
+    NavigationLinks,
+    FooterLinks,
+  ],
   editor: lexicalEditor(),
+  localization: {
+    defaultLocale: 'de',
+    fallback: true,
+    locales: [
+      {
+        code: 'de',
+        label: {
+          en: 'German',
+          de: 'Deutsch',
+        },
+      },
+      {
+        code: 'en',
+        label: {
+          en: 'English',
+          de: 'Englisch',
+        },
+      },
+    ],
+  },
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

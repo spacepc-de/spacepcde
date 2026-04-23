@@ -69,6 +69,14 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    authors: Author;
+    categories: Category;
+    tags: Tag;
+    'product-groups': ProductGroup;
+    'blog-posts': BlogPost;
+    comments: Comment;
+    'navigation-links': NavigationLink;
+    'footer-links': FooterLink;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +86,14 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    authors: AuthorsSelect<false> | AuthorsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
+    'product-groups': ProductGroupsSelect<false> | ProductGroupsSelect<true>;
+    'blog-posts': BlogPostsSelect<false> | BlogPostsSelect<true>;
+    comments: CommentsSelect<false> | CommentsSelect<true>;
+    'navigation-links': NavigationLinksSelect<false> | NavigationLinksSelect<true>;
+    'footer-links': FooterLinksSelect<false> | FooterLinksSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -86,10 +102,10 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('de' | 'en') | ('de' | 'en')[];
   globals: {};
   globalsSelect: {};
-  locale: null;
+  locale: 'de' | 'en';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -161,6 +177,166 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors".
+ */
+export interface Author {
+  id: number;
+  name: string;
+  /**
+   * URL-Slug fuer Frontend-Routen, z. B. mein-artikel
+   */
+  url: string;
+  role?: string | null;
+  bio?: string | null;
+  avatar?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  title: string;
+  /**
+   * URL-Slug fuer Frontend-Routen, z. B. mein-artikel
+   */
+  url: string;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  title: string;
+  /**
+   * URL-Slug fuer Frontend-Routen, z. B. mein-artikel
+   */
+  url: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-groups".
+ */
+export interface ProductGroup {
+  id: number;
+  title: string;
+  /**
+   * URL-Slug fuer Frontend-Routen, z. B. mein-artikel
+   */
+  url: string;
+  products: {
+    productName: string;
+    link: string;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-posts".
+ */
+export interface BlogPost {
+  id: number;
+  title: string;
+  /**
+   * URL-Slug fuer Frontend-Routen, z. B. mein-artikel
+   */
+  url: string;
+  /**
+   * Kurzer Teaser fuer Uebersichten und SEO
+   */
+  excerpt?: string | null;
+  /**
+   * WYSIWYG-Editor fuer den Beitrag. Markdown-Shortcuts wie #, ## oder - funktionieren direkt beim Tippen.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Alternativ den Inhalt direkt als Markdown bearbeiten. Beim Speichern wird automatisch in den Editor synchronisiert.
+   */
+  contentMarkdown?: string | null;
+  /**
+   * SEO-Titel fuer Suchmaschinen und Social Previews.
+   */
+  seoTitle?: string | null;
+  /**
+   * SEO-Beschreibung fuer Suchmaschinen und Social Previews.
+   */
+  seoDescription?: string | null;
+  author: number | Author;
+  categories?: (number | Category)[] | null;
+  tags?: (number | Tag)[] | null;
+  productGroups?: (number | ProductGroup)[] | null;
+  featuredImage?: (number | null) | Media;
+  publishedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments".
+ */
+export interface Comment {
+  id: number;
+  post: number | BlogPost;
+  authorName: string;
+  authorEmail: string;
+  content: string;
+  approved?: boolean | null;
+  approvedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation-links".
+ */
+export interface NavigationLink {
+  id: number;
+  label: string;
+  href: string;
+  order: number;
+  openInNewTab?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer-links".
+ */
+export interface FooterLink {
+  id: number;
+  label: string;
+  href: string;
+  order: number;
+  openInNewTab?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -190,6 +366,38 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'authors';
+        value: number | Author;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'product-groups';
+        value: number | ProductGroup;
+      } | null)
+    | ({
+        relationTo: 'blog-posts';
+        value: number | BlogPost;
+      } | null)
+    | ({
+        relationTo: 'comments';
+        value: number | Comment;
+      } | null)
+    | ({
+        relationTo: 'navigation-links';
+        value: number | NavigationLink;
+      } | null)
+    | ({
+        relationTo: 'footer-links';
+        value: number | FooterLink;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -270,6 +478,116 @@ export interface MediaSelect<T extends boolean = true> {
   filesize?: T;
   width?: T;
   height?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors_select".
+ */
+export interface AuthorsSelect<T extends boolean = true> {
+  name?: T;
+  url?: T;
+  role?: T;
+  bio?: T;
+  avatar?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  title?: T;
+  url?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  title?: T;
+  url?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-groups_select".
+ */
+export interface ProductGroupsSelect<T extends boolean = true> {
+  title?: T;
+  url?: T;
+  products?:
+    | T
+    | {
+        productName?: T;
+        link?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-posts_select".
+ */
+export interface BlogPostsSelect<T extends boolean = true> {
+  title?: T;
+  url?: T;
+  excerpt?: T;
+  content?: T;
+  contentMarkdown?: T;
+  seoTitle?: T;
+  seoDescription?: T;
+  author?: T;
+  categories?: T;
+  tags?: T;
+  productGroups?: T;
+  featuredImage?: T;
+  publishedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments_select".
+ */
+export interface CommentsSelect<T extends boolean = true> {
+  post?: T;
+  authorName?: T;
+  authorEmail?: T;
+  content?: T;
+  approved?: T;
+  approvedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation-links_select".
+ */
+export interface NavigationLinksSelect<T extends boolean = true> {
+  label?: T;
+  href?: T;
+  order?: T;
+  openInNewTab?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer-links_select".
+ */
+export interface FooterLinksSelect<T extends boolean = true> {
+  label?: T;
+  href?: T;
+  order?: T;
+  openInNewTab?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
