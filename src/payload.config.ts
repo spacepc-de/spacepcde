@@ -18,6 +18,7 @@ import { FooterLinks } from './collections/FooterLinks'
 import { NavigationLinks } from './collections/NavigationLinks'
 import { Pages } from './collections/Pages'
 import { ProductGroups } from './collections/ProductGroups'
+import { Redirects } from './collections/Redirects'
 import { Tags } from './collections/Tags'
 
 const filename = fileURLToPath(import.meta.url)
@@ -68,6 +69,7 @@ export default buildConfig({
     ProductGroups,
     BlogPosts,
     Pages,
+    Redirects,
     Comments,
     NavigationLinks,
     FooterLinks,

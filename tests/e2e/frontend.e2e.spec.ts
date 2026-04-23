@@ -8,13 +8,35 @@ test.describe('Frontend', () => {
     page = await context.newPage()
   })
 
-  test('can go on homepage', async ({ page }) => {
-    await page.goto('http://localhost:3000')
+  test('redirects the root URL permanently to the default locale homepage', async ({
+    page,
+    request,
+  }) => {
+    const response = await request.get('http://localhost:3000', {
+      maxRedirects: 0,
+    })
 
+    expect(response?.status()).toBe(301)
+    expect(response.headers().location).toBe('/de')
+
+    await page.goto('http://localhost:3000')
+    await expect(page).toHaveURL('http://localhost:3000/de')
+    await expect(page.locator('html')).toHaveAttribute('lang', 'de')
     await expect(page).toHaveTitle(/spacepc\.de/)
 
     const heading = page.locator('h1').first()
 
-    await expect(heading).toContainText('Moderne Oberflaeche')
+    await expect(heading).toContainText('Technische Inhalte und direkter IT Service')
+  })
+
+  test('renders the english locale with the correct document language', async ({ page }) => {
+    await page.goto('http://localhost:3000/en')
+
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await expect(page).toHaveTitle(/spacepc\.de/)
+
+    const heading = page.locator('h1').first()
+
+    await expect(heading).toContainText('Technical content and direct IT service')
   })
 })

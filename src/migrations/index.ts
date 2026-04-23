@@ -3,6 +3,7 @@ import * as migration_20260423_190000_blog from './20260423_190000_blog'
 import * as migration_20260423_210000_comments from './20260423_210000_comments'
 import * as migration_20260423_220000_layout_links from './20260423_220000_layout_links'
 import * as migration_20260423_230000_pages from './20260423_230000_pages'
+import * as migration_20260423_233000_redirects from './20260423_233000_redirects'
 
 export const migrations = [
   {
@@ -29,5 +30,10 @@ export const migrations = [
     up: migration_20260423_230000_pages.up,
     down: migration_20260423_230000_pages.down,
     name: '20260423_230000_pages',
+  },
+  {
+    up: migration_20260423_233000_redirects.up,
+    down: migration_20260423_233000_redirects.down,
+    name: '20260423_233000_redirects',
   },
 ]

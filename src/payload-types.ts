@@ -74,6 +74,8 @@ export interface Config {
     tags: Tag;
     'product-groups': ProductGroup;
     'blog-posts': BlogPost;
+    pages: Page;
+    redirects: Redirect;
     comments: Comment;
     'navigation-links': NavigationLink;
     'footer-links': FooterLink;
@@ -91,6 +93,8 @@ export interface Config {
     tags: TagsSelect<false> | TagsSelect<true>;
     'product-groups': ProductGroupsSelect<false> | ProductGroupsSelect<true>;
     'blog-posts': BlogPostsSelect<false> | BlogPostsSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
     'navigation-links': NavigationLinksSelect<false> | NavigationLinksSelect<true>;
     'footer-links': FooterLinksSelect<false> | FooterLinksSelect<true>;
@@ -296,6 +300,73 @@ export interface BlogPost {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  title: string;
+  /**
+   * URL-Slug fuer Frontend-Routen, z. B. mein-artikel
+   */
+  url: string;
+  /**
+   * Fuer Impressum, Datenschutz und aehnliche Seiten.
+   */
+  isLegalPage?: boolean | null;
+  /**
+   * WYSIWYG-Editor fuer statische Seiteninhalte.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Alternativ den Seiteninhalt direkt als Markdown bearbeiten. Beim Speichern wird automatisch synchronisiert.
+   */
+  contentMarkdown?: string | null;
+  /**
+   * SEO-Titel fuer Suchmaschinen und Social Previews.
+   */
+  seoTitle?: string | null;
+  /**
+   * SEO-Beschreibung fuer Suchmaschinen und Social Previews.
+   */
+  seoDescription?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "redirects".
+ */
+export interface Redirect {
+  id: number;
+  /**
+   * Exakter Quellpfad, z. B. /de/impressum-alt
+   */
+  fromPath: string;
+  /**
+   * Zielpfad oder absolute URL, z. B. /de/impressum
+   */
+  toPath: string;
+  statusCode: '301' | '302';
+  isEnabled?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "comments".
  */
 export interface Comment {
@@ -386,6 +457,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'blog-posts';
         value: number | BlogPost;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'redirects';
+        value: number | Redirect;
       } | null)
     | ({
         relationTo: 'comments';
@@ -548,6 +627,33 @@ export interface BlogPostsSelect<T extends boolean = true> {
   productGroups?: T;
   featuredImage?: T;
   publishedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  url?: T;
+  isLegalPage?: T;
+  content?: T;
+  contentMarkdown?: T;
+  seoTitle?: T;
+  seoDescription?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "redirects_select".
+ */
+export interface RedirectsSelect<T extends boolean = true> {
+  fromPath?: T;
+  toPath?: T;
+  statusCode?: T;
+  isEnabled?: T;
   updatedAt?: T;
   createdAt?: T;
 }
