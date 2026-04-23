@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
@@ -192,11 +193,11 @@ export default async function StaticPage({ params }: { params: Promise<{ slug: s
     <div className="site-shell">
       <header className="site-header">
         <nav aria-label="Hauptnavigation" className="site-nav">
-          <a className="brand" href="/">
+          <Link className="brand" href="/">
             <span>spacepc</span>
             <span className="brand__dot">.</span>
             <span>de</span>
-          </a>
+          </Link>
 
           <div className="site-nav__links">
             {navItems.map((item) => (
@@ -211,9 +212,9 @@ export default async function StaticPage({ params }: { params: Promise<{ slug: s
             ))}
           </div>
 
-          <a className="site-nav__cta" href="/#kontakt">
+          <Link className="site-nav__cta" href="/#kontakt">
             Anfrage senden
-          </a>
+          </Link>
         </nav>
       </header>
 
