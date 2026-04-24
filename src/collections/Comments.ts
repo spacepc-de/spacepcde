@@ -32,6 +32,15 @@ export const Comments: CollectionConfig = {
       required: true,
     },
     {
+      name: 'parent',
+      type: 'relationship',
+      relationTo: 'comments' as any,
+      admin: {
+        description: 'Optional: Antwort auf einen bestehenden Kommentar.',
+        position: 'sidebar',
+      },
+    },
+    {
       name: 'authorName',
       type: 'text',
       required: true,

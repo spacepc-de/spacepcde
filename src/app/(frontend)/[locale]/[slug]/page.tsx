@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { PostComments } from '@/components/frontend/PostComments'
 import {
   formatBlogDate,
   getCategoryHref,
@@ -52,22 +53,45 @@ type FrontendBlogPost = {
     | number
     | null
   publishedAt?: string | null
+  productGroups?: Array<{
+    id: number
+    products: Array<{
+      id?: string | null
+      link: string
+      productName: string
+    }>
+    title: string
+    url: string
+  } | number> | null
   seoDescription?: string | null
   seoTitle?: string | null
   tags?: Array<{ id: number; title: string; url: string } | number> | null
   title: string
   url: string
+  id: number
 }
 
 type FrontendEntry =
   | ({ kind: 'page' } & FrontendPage)
   | ({ kind: 'post' } & FrontendBlogPost)
 
+type FrontendComment = {
+  authorName: string
+  content: string
+  createdAt: string
+  id: number
+  parent?: number | { id: number } | null
+}
+
 function renderMarkdown(markdown: string) {
   const lines = markdown.split('\n')
   const elements: React.ReactNode[] = []
   let paragraphBuffer: string[] = []
   let listBuffer: string[] = []
+  let listType: 'ul' | 'ol' | null = null
+  let codeBuffer: string[] = []
+  let inCodeBlock = false
+  let blockquoteBuffer: string[] = []
 
   const flushParagraph = () => {
     if (paragraphBuffer.length === 0) return
@@ -77,57 +101,122 @@ function renderMarkdown(markdown: string) {
 
   const flushList = () => {
     if (listBuffer.length === 0) return
+    const Tag = listType === 'ol' ? 'ol' : 'ul'
     elements.push(
-      <ul key={`ul-${elements.length}`}>
+      <Tag key={`${listType ?? 'ul'}-${elements.length}`}>
         {listBuffer.map((item, index) => (
           <li key={`li-${elements.length}-${index}`}>{item}</li>
         ))}
-      </ul>,
+      </Tag>,
     )
     listBuffer = []
+    listType = null
+  }
+
+  const flushCodeBlock = () => {
+    if (codeBuffer.length === 0) return
+    elements.push(
+      <pre className="content-page__code" key={`code-${elements.length}`}>
+        <code>{codeBuffer.join('\n')}</code>
+      </pre>,
+    )
+    codeBuffer = []
+  }
+
+  const flushBlockquote = () => {
+    if (blockquoteBuffer.length === 0) return
+    elements.push(
+      <blockquote className="content-page__quote" key={`quote-${elements.length}`}>
+        {blockquoteBuffer.map((line, index) => (
+          <p key={`quote-line-${index}`}>{line}</p>
+        ))}
+      </blockquote>,
+    )
+    blockquoteBuffer = []
   }
 
   for (const rawLine of lines) {
     const line = rawLine.trim()
 
+    if (line.startsWith('```')) {
+      flushParagraph()
+      flushList()
+      flushBlockquote()
+      if (inCodeBlock) {
+        flushCodeBlock()
+        inCodeBlock = false
+      } else {
+        inCodeBlock = true
+      }
+      continue
+    }
+
+    if (inCodeBlock) {
+      codeBuffer.push(rawLine)
+      continue
+    }
+
     if (!line) {
       flushParagraph()
       flushList()
+      flushBlockquote()
       continue
     }
     if (line.startsWith('# ')) {
       flushParagraph()
       flushList()
+      flushBlockquote()
       elements.push(<h2 key={`h2-${elements.length}`}>{line.slice(2).trim()}</h2>)
       continue
     }
     if (line.startsWith('## ')) {
       flushParagraph()
       flushList()
+      flushBlockquote()
       elements.push(<h3 key={`h3-${elements.length}`}>{line.slice(3).trim()}</h3>)
       continue
     }
     if (line.startsWith('### ')) {
       flushParagraph()
       flushList()
+      flushBlockquote()
       elements.push(<h4 key={`h4-${elements.length}`}>{line.slice(4).trim()}</h4>)
+      continue
+    }
+    if (line.startsWith('> ')) {
+      flushParagraph()
+      flushList()
+      blockquoteBuffer.push(line.slice(2).trim())
       continue
     }
     if (line.startsWith('- ')) {
       flushParagraph()
+      flushBlockquote()
+      if (listType && listType !== 'ul') {
+        flushList()
+      }
+      listType = 'ul'
       listBuffer.push(line.slice(2).trim())
       continue
     }
     if (/^\d+\.\s/.test(line)) {
       flushParagraph()
+      flushBlockquote()
+      if (listType && listType !== 'ol') {
+        flushList()
+      }
+      listType = 'ol'
       listBuffer.push(line.replace(/^\d+\.\s/, '').trim())
       continue
     }
+    flushBlockquote()
     paragraphBuffer.push(line)
   }
 
   flushParagraph()
   flushList()
+  flushBlockquote()
+  flushCodeBlock()
 
   return elements
 }
@@ -150,15 +239,24 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
     }),
     payload.find({
       collection: 'blog-posts' as never,
-      depth: 1,
+      depth: 2,
       fallbackLocale: 'de',
       limit: 1,
       locale,
       sort: '-publishedAt',
       where: {
-        url: {
-          equals: slug,
-        },
+        and: [
+          {
+            url: {
+              equals: slug,
+            },
+          },
+          {
+            status: {
+              equals: 'published',
+            },
+          },
+        ],
       },
     }),
     payload.find({
@@ -179,7 +277,45 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
     }),
   ])
 
+  const post = blogPostResult.docs[0] as FrontendBlogPost | undefined
+
+  const commentsResult =
+    post?.id
+      ? await payload.find({
+          collection: 'comments' as never,
+          depth: 1,
+          limit: 100,
+          sort: 'createdAt',
+          where: {
+            and: [
+              {
+                approved: {
+                  equals: true,
+                },
+              },
+              {
+                post: {
+                  equals: post.id,
+                },
+              },
+            ],
+          },
+        })
+      : null
+
   return {
+    comments: ((commentsResult?.docs ?? []) as FrontendComment[]).map(
+      (comment): { authorName: string; content: string; createdAt: string; id: number; parent?: number | null } => ({
+        authorName: comment.authorName,
+        content: comment.content,
+        createdAt: comment.createdAt,
+        id: comment.id,
+        parent:
+          typeof comment.parent === 'object' && comment.parent
+            ? (comment.parent as { id: number }).id
+            : ((comment.parent as number | null | undefined) ?? null),
+      }),
+    ),
     footerLinks: mapLinks(
       locale,
       footerResult.docs as Array<{ href: string; label: string; openInNewTab?: boolean | null }>,
@@ -199,8 +335,6 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
           ...page,
         } satisfies FrontendEntry
       }
-
-      const post = blogPostResult.docs[0] as FrontendBlogPost | undefined
 
       if (post) {
         return {
@@ -253,13 +387,17 @@ export default async function LocalizedStaticPage({
     notFound()
   }
 
-  const { entry, footerLinks, navItems } = await getEntryBySlug(locale, slug)
+  const { comments, entry, footerLinks, navItems } = await getEntryBySlug(locale, slug)
 
   if (!entry) {
     notFound()
   }
 
   const featuredImage = entry.kind === 'post' ? getFeaturedImage(entry) : null
+  const productGroups =
+    entry.kind === 'post' && Array.isArray(entry.productGroups)
+      ? entry.productGroups.filter((group): group is NonNullable<FrontendBlogPost['productGroups']>[number] & { id: number; title: string; url: string; products: { id?: string | null; link: string; productName: string }[] } => typeof group === 'object' && group !== null)
+      : []
 
   return (
     <div className="site-shell">
@@ -318,52 +456,102 @@ export default async function LocalizedStaticPage({
           ) : null}
         </section>
 
-        <section className="section">
-          <article className="content-page__card">
-            {featuredImage ? (
-              <div className="content-page__image-wrap">
-                <img
-                  alt={featuredImage.alt}
-                  className="content-page__image"
-                  loading="eager"
-                  src={featuredImage.url}
-                />
+        <section className="section content-page__layout">
+          <div className="content-page__main">
+            <article className="content-page__card">
+              {featuredImage ? (
+                <div className="content-page__image-wrap">
+                  <img
+                    alt={featuredImage.alt}
+                    className="content-page__image"
+                    loading="eager"
+                    src={featuredImage.url}
+                  />
+                </div>
+              ) : null}
+              <div className="content-page__body content-page__body--prose">
+                {entry.kind === 'post' && (isPopulatedCategory(entry.categories) || isPopulatedTag(entry.tags)) ? (
+                  <div className="blog-card__taxonomy blog-card__taxonomy--spacious">
+                    {isPopulatedCategory(entry.categories)
+                      ? entry.categories.map((category) => (
+                          <Link className="tag-pill" href={getCategoryHref(locale, category.url)} key={`cat-${category.id}`}>
+                            {category.title}
+                          </Link>
+                        ))
+                      : null}
+                    {isPopulatedTag(entry.tags)
+                      ? entry.tags.map((tag) => (
+                          <Link className="tag-pill tag-pill--neutral" href={getTagHref(locale, tag.url)} key={`tag-${tag.id}`}>
+                            #{tag.title}
+                          </Link>
+                        ))
+                      : null}
+                  </div>
+                ) : null}
+                {entry.contentMarkdown?.trim() ? (
+                  renderMarkdown(entry.contentMarkdown)
+                ) : (
+                  <p>{locale === 'de' ? 'Diese Seite enthaelt noch keinen Inhalt.' : 'This page has no content yet.'}</p>
+                )}
+                {entry.kind === 'post' ? (
+                  <div className="content-page__actions">
+                    <Link className="button button--secondary" href={`/${locale}/blog`}>
+                      {locale === 'de' ? 'Zur Blog-Uebersicht' : 'Back to blog'}
+                    </Link>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-            <div className="content-page__body">
-              {entry.kind === 'post' && (isPopulatedCategory(entry.categories) || isPopulatedTag(entry.tags)) ? (
-                <div className="blog-card__taxonomy blog-card__taxonomy--spacious">
-                  {isPopulatedCategory(entry.categories)
-                    ? entry.categories.map((category) => (
-                        <Link className="tag-pill" href={getCategoryHref(locale, category.url)} key={`cat-${category.id}`}>
-                          {category.title}
-                        </Link>
-                      ))
-                    : null}
-                  {isPopulatedTag(entry.tags)
-                    ? entry.tags.map((tag) => (
-                        <Link className="tag-pill tag-pill--neutral" href={getTagHref(locale, tag.url)} key={`tag-${tag.id}`}>
-                          #{tag.title}
-                        </Link>
-                      ))
-                    : null}
+            </article>
+          </div>
+
+          {entry.kind === 'post' ? (
+            <aside className="content-page__sidebar">
+              <div className="content-page__sidebar-card">
+                <p className="eyebrow">{locale === 'de' ? 'IT Service' : 'IT Services'}</p>
+                <h3>{locale === 'de' ? 'Unterstuetzung fuer Infrastruktur, Hosting und Betrieb' : 'Support for infrastructure, hosting, and operations'}</h3>
+                <p>
+                  {locale === 'de'
+                    ? 'Wenn aus einem Artikel ein konkretes Problem, eine Migration oder ein Betriebs-Thema wird, ist spacepc.dev der direkte Weg zum passenden Service.'
+                    : 'If a post turns into a concrete issue, migration, or operations task, spacepc.dev is the direct path to the related service.'}
+                </p>
+                <div className="content-page__sidebar-actions">
+                  <a className="button button--primary" href="https://spacepc.dev" rel="noreferrer" target="_blank">
+                    {locale === 'de' ? 'Zu spacepc.dev' : 'Open spacepc.dev'}
+                  </a>
+                  <a className="button button--secondary" href="mailto:hallo@spacepc.de">
+                    hallo@spacepc.de
+                  </a>
+                </div>
+              </div>
+
+              {productGroups.length > 0 ? (
+                <div className="content-page__sidebar-card">
+                  <p className="eyebrow">{locale === 'de' ? 'Produktgruppen' : 'Product groups'}</p>
+                  <div className="content-page__group-list">
+                    {productGroups.map((group) => (
+                      <div className="content-page__group" key={group.id}>
+                        <h4>{group.title}</h4>
+                        {group.products.length > 0 ? (
+                          <ul>
+                            {group.products.slice(0, 5).map((product) => (
+                              <li key={`${group.id}-${product.id ?? product.productName}`}>
+                                <a href={product.link} rel="noreferrer" target="_blank">
+                                  {product.productName}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
-              {entry.contentMarkdown?.trim() ? (
-                renderMarkdown(entry.contentMarkdown)
-              ) : (
-                <p>{locale === 'de' ? 'Diese Seite enthaelt noch keinen Inhalt.' : 'This page has no content yet.'}</p>
-              )}
-              {entry.kind === 'post' ? (
-                <div className="content-page__actions">
-                  <Link className="button button--secondary" href={`/${locale}/blog`}>
-                    {locale === 'de' ? 'Zur Blog-Uebersicht' : 'Back to blog'}
-                  </Link>
-                </div>
-              ) : null}
-            </div>
-          </article>
+            </aside>
+          ) : null}
         </section>
+
+        {entry.kind === 'post' ? <PostComments comments={comments} locale={locale} postId={entry.id} /> : null}
       </main>
 
       <footer className="site-footer">

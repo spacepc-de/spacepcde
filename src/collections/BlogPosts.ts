@@ -49,11 +49,37 @@ export const BlogPosts: CollectionConfig = {
         }
       },
     ],
+    beforeChange: [
+      ({ data, originalDoc }) => {
+        if (!data) {
+          return data
+        }
+
+        const nextStatus = data.status
+        const previousStatus = originalDoc?.status
+
+        if (nextStatus === 'published' && !data.publishedAt) {
+          return {
+            ...data,
+            publishedAt: originalDoc?.publishedAt || new Date().toISOString(),
+          }
+        }
+
+        if (nextStatus === 'draft' && previousStatus !== 'published') {
+          return {
+            ...data,
+            publishedAt: data.publishedAt || originalDoc?.publishedAt || null,
+          }
+        }
+
+        return data
+      },
+    ],
   },
   admin: {
     group: 'Blog',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'author', 'publishedAt', 'updatedAt'],
+    defaultColumns: ['title', 'status', 'author', 'publishedAt', 'updatedAt'],
   },
   defaultSort: '-publishedAt',
   fields: [
@@ -109,37 +135,54 @@ export const BlogPosts: CollectionConfig = {
         {
           label: 'SEO',
           fields: [
-            withAIButton(
-              withTranslationButton({
-                name: 'seoTitle',
-                type: 'text',
-                localized: true,
-                admin: {
-                  description: 'SEO-Titel fuer Suchmaschinen und Social Previews.',
+            {
+              name: 'seoActions',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: './components/admin/SeoAIActions#SeoAIActions',
                 },
-              }),
-              'generateSeo',
-              {
-                label: 'Meta-Daten mit KI erzeugen',
               },
-            ),
-            withAIButton(
-              withTranslationButton({
-                name: 'seoDescription',
-                type: 'textarea',
-                localized: true,
-                admin: {
-                  description: 'SEO-Beschreibung fuer Suchmaschinen und Social Previews.',
-                },
-              }),
-              'generateSeo',
-              {
-                label: 'Meta-Daten mit KI erzeugen',
+            },
+            withTranslationButton({
+              name: 'seoTitle',
+              type: 'text',
+              localized: true,
+              admin: {
+                description: 'SEO-Titel fuer Suchmaschinen und Social Previews.',
               },
-            ),
+            }),
+            withTranslationButton({
+              name: 'seoDescription',
+              type: 'textarea',
+              localized: true,
+              admin: {
+                description: 'SEO-Beschreibung fuer Suchmaschinen und Social Previews.',
+              },
+            }),
           ],
         },
       ],
+    },
+    {
+      name: 'status',
+      type: 'select',
+      defaultValue: 'draft',
+      index: true,
+      options: [
+        {
+          label: 'Draft',
+          value: 'draft',
+        },
+        {
+          label: 'Published',
+          value: 'published',
+        },
+      ],
+      admin: {
+        position: 'sidebar',
+      },
+      required: true,
     },
     {
       name: 'author',

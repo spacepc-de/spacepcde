@@ -45,6 +45,11 @@ async function getBlogIndexData(locale: 'de' | 'en') {
       limit: 24,
       locale,
       sort: '-publishedAt',
+      where: {
+        status: {
+          equals: 'published',
+        },
+      },
     }),
     payload.find({
       collection: 'categories',

@@ -39,6 +39,11 @@ async function getCategoryPageData(locale: 'de' | 'en', slug: string) {
       limit: 100,
       locale,
       sort: '-publishedAt',
+      where: {
+        status: {
+          equals: 'published',
+        },
+      },
     }),
   ])
 

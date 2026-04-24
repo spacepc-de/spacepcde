@@ -155,6 +155,11 @@ async function getHomeData(locale: LocaleCode) {
       limit: 12,
       locale,
       sort: '-publishedAt',
+      where: {
+        status: {
+          equals: 'published',
+        },
+      },
     }),
   ])
 
