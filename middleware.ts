@@ -11,6 +11,19 @@ type ResolveResponse = {
 const SKIP_PREFIXES = ['/api', '/admin', '/_next', '/favicon', '/robots.txt', '/sitemap.xml']
 const LOCALE_COOKIE = 'site-locale'
 const LOCALE_HEADER = 'x-site-locale'
+const STATIC_REDIRECTS: Record<string, string> = {
+  '/meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir': '/de/meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir',
+  '/meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir/':
+    '/de/meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir',
+  '/wetter-display-mit-esp32-und-3d-druck-gehaeuse': '/de/wetter-display-mit-esp32-und-3d-druck-gehaeuse',
+  '/wetter-display-mit-esp32-und-3d-druck-gehaeuse/': '/de/wetter-display-mit-esp32-und-3d-druck-gehaeuse',
+  '/luftqualitaetssensor-mittels-esp32-co2-luftfeuchtigkeit-temperatur':
+    '/de/luftqualitaetssensor-mittels-esp32-co2-luftfeuchtigkeit-temperatur',
+  '/luftqualitaetssensor-mittels-esp32-co2-luftfeuchtigkeit-temperatur/':
+    '/de/luftqualitaetssensor-mittels-esp32-co2-luftfeuchtigkeit-temperatur',
+  '/anormales-verhalten-erkennen-mit-zabbix': '/de/anormales-verhalten-erkennen-mit-zabbix',
+  '/anormales-verhalten-erkennen-mit-zabbix/': '/de/anormales-verhalten-erkennen-mit-zabbix',
+}
 
 function getLocaleFromPathname(pathname: string) {
   if (pathname === '/de' || pathname.startsWith('/de/')) {
@@ -65,6 +78,13 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === '/') {
     const destination = new URL('/de', request.url)
+    return withLocaleCookie(NextResponse.redirect(destination, 301), destination.pathname)
+  }
+
+  const staticRedirect = STATIC_REDIRECTS[pathname]
+
+  if (staticRedirect) {
+    const destination = new URL(staticRedirect, request.url)
     return withLocaleCookie(NextResponse.redirect(destination, 301), destination.pathname)
   }
 

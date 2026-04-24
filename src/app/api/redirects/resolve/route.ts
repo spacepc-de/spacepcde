@@ -10,6 +10,15 @@ type RedirectDoc = {
   toPath: string
 }
 
+function getPathCandidates(pathname: string) {
+  if (pathname === '/') {
+    return ['/']
+  }
+
+  const alternate = pathname.endsWith('/') ? pathname.slice(0, -1) : `${pathname}/`
+  return pathname === alternate ? [pathname] : [pathname, alternate]
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -20,28 +29,37 @@ export async function GET(request: Request) {
     }
 
     const payload = await getPayload({ config: await getPayloadConfig() })
-    const result = await payload.find({
-      collection: 'redirects' as never,
-      depth: 0,
-      limit: 1,
-      overrideAccess: true,
-      where: {
-        and: [
-          {
-            fromPath: {
-              equals: pathname,
-            },
-          },
-          {
-            isEnabled: {
-              equals: true,
-            },
-          },
-        ],
-      },
-    })
+    const candidates = getPathCandidates(pathname)
+    let redirect: RedirectDoc | null = null
 
-    const redirect = (result.docs[0] as RedirectDoc | undefined) ?? null
+    for (const candidate of candidates) {
+      const result = await payload.find({
+        collection: 'redirects' as never,
+        depth: 0,
+        limit: 1,
+        overrideAccess: true,
+        where: {
+          and: [
+            {
+              fromPath: {
+                equals: candidate,
+              },
+            },
+            {
+              isEnabled: {
+                equals: true,
+              },
+            },
+          ],
+        },
+      })
+
+      redirect = (result.docs[0] as RedirectDoc | undefined) ?? null
+
+      if (redirect) {
+        break
+      }
+    }
 
     if (!redirect) {
       return NextResponse.json({ redirect: null })

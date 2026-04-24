@@ -2,6 +2,30 @@ import { withPayload } from '@payloadcms/next/withPayload'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir',
+        destination: '/de/meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir',
+        permanent: true,
+      },
+      {
+        source: '/wetter-display-mit-esp32-und-3d-druck-gehaeuse',
+        destination: '/de/wetter-display-mit-esp32-und-3d-druck-gehaeuse',
+        permanent: true,
+      },
+      {
+        source: '/luftqualitaetssensor-mittels-esp32-co2-luftfeuchtigkeit-temperatur',
+        destination: '/de/luftqualitaetssensor-mittels-esp32-co2-luftfeuchtigkeit-temperatur',
+        permanent: true,
+      },
+      {
+        source: '/anormales-verhalten-erkennen-mit-zabbix',
+        destination: '/de/anormales-verhalten-erkennen-mit-zabbix',
+        permanent: true,
+      },
+    ]
+  },
   images: {
     localPatterns: [
       {
