@@ -25,35 +25,62 @@ function getTargetLocale(locale: 'de' | 'en') {
   return locale === 'de' ? 'en' : 'de'
 }
 
-async function getCategoryPageData(locale: 'de' | 'en', slug: string) {
-  const payload = await getPayload({ config: await getPayloadConfig() })
-  const [categoryResult, postsResult] = await Promise.all([
-    payload.find({
-      collection: 'categories',
-      depth: 0,
-      fallbackLocale: 'de',
-      limit: 1,
-      locale,
-      where: {
-        url: {
-          equals: slug,
-        },
-      },
-    }),
-    payload.find({
+async function getPublishedPostsForCategory(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  categoryId: number,
+  locale: 'de' | 'en',
+) {
+  const posts: BlogPost[] = []
+  let page = 1
+  let hasNextPage = true
+
+  while (hasNextPage) {
+    const result = await payload.find({
       collection: 'blog-posts',
       depth: 2,
       fallbackLocale: 'de',
       limit: 100,
       locale,
+      page,
       sort: '-publishedAt',
       where: {
-        status: {
-          equals: 'published',
-        },
+        and: [
+          {
+            status: {
+              equals: 'published',
+            },
+          },
+          {
+            categories: {
+              equals: categoryId,
+            },
+          },
+        ],
       },
-    }),
-  ])
+    })
+
+    posts.push(...(result.docs as BlogPost[]))
+    hasNextPage = result.hasNextPage
+    page += 1
+  }
+
+  return posts
+}
+
+async function getCategoryPageData(locale: 'de' | 'en', slug: string) {
+  const payload = await getPayload({ config: await getPayloadConfig() })
+  const categoryResult = await payload.find({
+    collection: 'categories',
+    depth: 0,
+    fallbackLocale: 'de',
+    limit: 1,
+    locale,
+    where: {
+      url: {
+        equals: slug,
+      },
+    },
+  })
 
   const category = (categoryResult.docs[0] as Category | undefined) ?? null
   const targetLocale = getTargetLocale(locale)
@@ -66,20 +93,14 @@ async function getCategoryPageData(locale: 'de' | 'en', slug: string) {
         locale: targetLocale,
       }).catch((): null => null)) as Category | null)
     : null
+  const posts = category ? await getPublishedPostsForCategory(payload, category.id, locale) : []
 
   return {
     category,
     localeSwitchHref: localizedCategory?.url
       ? `/${targetLocale}/blog/category/${localizedCategory.url}`
       : `/${targetLocale}/blog`,
-    posts: (postsResult.docs as BlogPost[]).filter((post) => {
-      if (!isPopulatedCategory(post.categories)) {
-        return false
-      }
-
-      const categories = post.categories as Array<{ url: string }>
-      return categories.some((category) => category.url === slug)
-    }),
+    posts,
   }
 }
 

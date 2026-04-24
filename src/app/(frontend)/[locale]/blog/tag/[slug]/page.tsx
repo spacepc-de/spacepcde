@@ -25,35 +25,62 @@ function getTargetLocale(locale: 'de' | 'en') {
   return locale === 'de' ? 'en' : 'de'
 }
 
-async function getTagPageData(locale: 'de' | 'en', slug: string) {
-  const payload = await getPayload({ config: await getPayloadConfig() })
-  const [tagResult, postsResult] = await Promise.all([
-    payload.find({
-      collection: 'tags',
-      depth: 0,
-      fallbackLocale: 'de',
-      limit: 1,
-      locale,
-      where: {
-        url: {
-          equals: slug,
-        },
-      },
-    }),
-    payload.find({
+async function getPublishedPostsForTag(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  locale: 'de' | 'en',
+  tagId: number,
+) {
+  const posts: BlogPost[] = []
+  let page = 1
+  let hasNextPage = true
+
+  while (hasNextPage) {
+    const result = await payload.find({
       collection: 'blog-posts',
       depth: 2,
       fallbackLocale: 'de',
       limit: 100,
       locale,
+      page,
       sort: '-publishedAt',
       where: {
-        status: {
-          equals: 'published',
-        },
+        and: [
+          {
+            status: {
+              equals: 'published',
+            },
+          },
+          {
+            tags: {
+              equals: tagId,
+            },
+          },
+        ],
       },
-    }),
-  ])
+    })
+
+    posts.push(...(result.docs as BlogPost[]))
+    hasNextPage = result.hasNextPage
+    page += 1
+  }
+
+  return posts
+}
+
+async function getTagPageData(locale: 'de' | 'en', slug: string) {
+  const payload = await getPayload({ config: await getPayloadConfig() })
+  const tagResult = await payload.find({
+    collection: 'tags',
+    depth: 0,
+    fallbackLocale: 'de',
+    limit: 1,
+    locale,
+    where: {
+      url: {
+        equals: slug,
+      },
+    },
+  })
 
   const tag = (tagResult.docs[0] as Tag | undefined) ?? null
   const targetLocale = getTargetLocale(locale)
@@ -66,17 +93,11 @@ async function getTagPageData(locale: 'de' | 'en', slug: string) {
         locale: targetLocale,
       }).catch((): null => null)) as Tag | null)
     : null
+  const posts = tag ? await getPublishedPostsForTag(payload, locale, tag.id) : []
 
   return {
     localeSwitchHref: localizedTag?.url ? `/${targetLocale}/blog/tag/${localizedTag.url}` : `/${targetLocale}/blog`,
-    posts: (postsResult.docs as BlogPost[]).filter((post) => {
-      if (!isPopulatedTag(post.tags)) {
-        return false
-      }
-
-      const tags = post.tags as Array<{ url: string }>
-      return tags.some((tag) => tag.url === slug)
-    }),
+    posts,
     tag,
   }
 }

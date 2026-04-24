@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useEffectEvent, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import type { ApprovedComment } from '@/lib/comments'
 
@@ -34,6 +34,20 @@ function formatCommentDate(value: string, locale: 'de' | 'en') {
   }).format(new Date(value))
 }
 
+async function fetchApprovedComments(postId: number) {
+  const response = await fetch(`/api/comments?postId=${postId}`, {
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    return null
+  }
+
+  const json = (await response.json()) as { comments?: CommentItem[] }
+
+  return Array.isArray(json.comments) ? json.comments : null
+}
+
 export function PostComments({ initialComments, locale, postId }: Props) {
   const [form, setForm] = useState<FormState>(initialFormState)
   const [isLoading, setIsLoading] = useState(false)
@@ -41,29 +55,27 @@ export function PostComments({ initialComments, locale, postId }: Props) {
   const [message, setMessage] = useState<string | null>(null)
   const [replyTo, setReplyTo] = useState<number | null>(null)
 
-  const refreshComments = useEffectEvent(async () => {
-    try {
-      const response = await fetch(`/api/comments?postId=${postId}`, {
-        cache: 'no-store',
-      })
-
-      if (!response.ok) {
-        return
-      }
-
-      const json = (await response.json()) as { comments?: CommentItem[] }
-
-      if (Array.isArray(json.comments)) {
-        setComments(json.comments)
-      }
-    } catch {
-      // Keep the server-rendered comments when the refresh fails.
-    }
-  })
-
   useEffect(() => {
+    let cancelled = false
+
+    const refreshComments = async () => {
+      try {
+        const nextComments = await fetchApprovedComments(postId)
+
+        if (!cancelled && nextComments) {
+          setComments(nextComments)
+        }
+      } catch {
+        // Keep the server-rendered comments when the refresh fails.
+      }
+    }
+
     void refreshComments()
-  }, [postId, refreshComments])
+
+    return () => {
+      cancelled = true
+    }
+  }, [postId])
 
   const { roots, repliesByParent } = useMemo(() => {
     const roots: CommentItem[] = []
@@ -148,7 +160,11 @@ export function PostComments({ initialComments, locale, postId }: Props) {
       setForm(initialFormState)
       setReplyTo(null)
       setMessage(json.message ?? labels.success)
-      await refreshComments()
+      const nextComments = await fetchApprovedComments(postId)
+
+      if (nextComments) {
+        setComments(nextComments)
+      }
     } catch {
       setMessage(locale === 'de' ? 'Kommentar konnte nicht gespeichert werden.' : 'Comment could not be saved.')
     } finally {

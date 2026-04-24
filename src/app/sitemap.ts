@@ -1,9 +1,12 @@
 import type { MetadataRoute } from 'next'
 import { getPayload } from 'payload'
+import type { Payload } from 'payload'
 
 import { SITE_URL, type LocaleCode } from '@/lib/frontend'
 import { getPayloadConfig } from '@/payload.config'
 import type { BlogPost, Category, Page, Tag } from '@/payload-types'
+
+export const dynamic = 'force-dynamic'
 
 const LOCALES: LocaleCode[] = ['de', 'en']
 
@@ -37,27 +40,37 @@ function toSitemapEntry(
 }
 
 async function getLocalizedDocs<T extends { updatedAt: string; url: string }>(
+  payload: Payload,
   collection: 'pages' | 'categories' | 'tags' | 'blog-posts',
   locale: LocaleCode,
-  limit = 200,
   where?: Record<string, unknown>,
 ) {
-  const payload = await getPayload({ config: await getPayloadConfig() })
+  const docs: T[] = []
+  let page = 1
+  let hasNextPage = true
 
-  const result = await payload.find({
-    collection,
-    depth: 0,
-    fallbackLocale: false,
-    limit,
-    locale,
-    sort: 'url',
-    ...(where ? { where } : {}),
-  })
+  while (hasNextPage) {
+    const result = await payload.find({
+      collection,
+      depth: 0,
+      fallbackLocale: false,
+      limit: 200,
+      locale,
+      page,
+      sort: 'url',
+      ...(where ? { where } : {}),
+    })
 
-  return result.docs as unknown as T[]
+    docs.push(...(result.docs as unknown as T[]))
+    hasNextPage = result.hasNextPage
+    page += 1
+  }
+
+  return docs
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const payload = await getPayload({ config: await getPayloadConfig() })
   const entries: MetadataRoute.Sitemap = []
 
   for (const locale of LOCALES) {
@@ -65,10 +78,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push(toSitemapEntry(`/${locale}/blog`, locale))
 
     const [pages, categories, tags, posts] = await Promise.all([
-      getLocalizedDocs<Page>('pages', locale),
-      getLocalizedDocs<Category>('categories', locale),
-      getLocalizedDocs<Tag>('tags', locale),
-      getLocalizedDocs<BlogPost>('blog-posts', locale, 1000, {
+      getLocalizedDocs<Page>(payload, 'pages', locale),
+      getLocalizedDocs<Category>(payload, 'categories', locale),
+      getLocalizedDocs<Tag>(payload, 'tags', locale),
+      getLocalizedDocs<BlogPost>(payload, 'blog-posts', locale, {
         status: {
           equals: 'published',
         },

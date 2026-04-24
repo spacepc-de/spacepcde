@@ -29,6 +29,9 @@ const nextConfig = {
   images: {
     localPatterns: [
       {
+        pathname: '/blog-images/**',
+      },
+      {
         pathname: '/api/media/file/**',
       },
     ],
