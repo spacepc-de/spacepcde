@@ -4,6 +4,7 @@ import * as migration_20260423_210000_comments from './20260423_210000_comments'
 import * as migration_20260423_220000_layout_links from './20260423_220000_layout_links'
 import * as migration_20260423_230000_pages from './20260423_230000_pages'
 import * as migration_20260423_233000_redirects from './20260423_233000_redirects'
+import * as migration_20260424_040000_locked_document_rels from './20260424_040000_locked_document_rels'
 
 export const migrations = [
   {
@@ -35,5 +36,10 @@ export const migrations = [
     up: migration_20260423_233000_redirects.up,
     down: migration_20260423_233000_redirects.down,
     name: '20260423_233000_redirects',
+  },
+  {
+    up: migration_20260424_040000_locked_document_rels.up,
+    down: migration_20260424_040000_locked_document_rels.down,
+    name: '20260424_040000_locked_document_rels',
   },
 ]

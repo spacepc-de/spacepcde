@@ -5,6 +5,23 @@ export const Media: CollectionConfig = {
   access: {
     read: () => true,
   },
+  hooks: {
+    afterRead: [
+      ({ doc }) => {
+        if (!doc?.filename) {
+          return doc
+        }
+
+        const url = `/blog-images/${encodeURIComponent(doc.filename)}`
+
+        return {
+          ...doc,
+          thumbnailURL: doc.thumbnailURL ?? url,
+          url,
+        }
+      },
+    ],
+  },
   fields: [
     {
       name: 'alt',

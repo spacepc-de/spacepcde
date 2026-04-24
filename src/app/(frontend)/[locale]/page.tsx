@@ -445,6 +445,12 @@ export default async function LocalizedHomePage({
                     ))}
                   </div>
                 ) : null}
+
+                {leadPost ? (
+                  <Link className="button button--secondary" href={`/${locale}/${leadPost.url}`}>
+                    {locale === 'de' ? 'Beitrag lesen' : 'Read article'}
+                  </Link>
+                ) : null}
               </div>
             </article>
 
@@ -518,11 +524,11 @@ export default async function LocalizedHomePage({
             <div className="latest-posts__list">
               {latestPosts.length > 0 ? (
                 latestPosts.map((post) => (
-                  <article className="latest-post" key={post.id}>
+                  <Link className="latest-post latest-post--link" href={`/${locale}/${post.url}`} key={post.id}>
                     <p className="story-meta">{formatDate(post.publishedAt, locale)}</p>
                     <h3>{post.title}</h3>
                     <p>{buildSummary(post)}</p>
-                  </article>
+                  </Link>
                 ))
               ) : (
                 <article className="latest-post">

@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
 import { slugField } from '../fields/slug'
-import { withTranslationButton } from '../fields/translationButton'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -14,17 +13,15 @@ export const Categories: CollectionConfig = {
     defaultColumns: ['title', 'url', 'updatedAt'],
   },
   fields: [
-    withTranslationButton({
+    {
       name: 'title',
       type: 'text',
       required: true,
-      localized: true,
-    }),
-    slugField(),
-    withTranslationButton({
+    },
+    slugField('title', { localized: false }),
+    {
       name: 'description',
       type: 'textarea',
-      localized: true,
-    }),
+    },
   ],
 }

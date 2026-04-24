@@ -484,11 +484,27 @@ main {
   font-size: clamp(2.4rem, 4vw, 4.2rem);
 }
 
+.content-page__meta {
+  margin-top: 1rem;
+}
+
 .content-page__card {
   border: 1px solid var(--line);
   border-radius: 1.6rem;
   background: var(--surface);
   box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.content-page__image-wrap {
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.content-page__image {
+  width: 100%;
+  max-height: 32rem;
+  object-fit: cover;
 }
 
 .content-page__body {
@@ -519,6 +535,10 @@ main {
 .content-page__body ul {
   margin: 0 0 1.25rem;
   padding-left: 1.2rem;
+}
+
+.latest-post--link {
+  text-decoration: none;
 }
 
 @media (max-width: 1080px) {

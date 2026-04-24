@@ -25,6 +25,27 @@ type FrontendPage = {
   url: string
 }
 
+type FrontendBlogPost = {
+  contentMarkdown?: string | null
+  excerpt?: string | null
+  featuredImage?:
+    | {
+        alt?: string | null
+        url?: string | null
+      }
+    | number
+    | null
+  publishedAt?: string | null
+  seoDescription?: string | null
+  seoTitle?: string | null
+  title: string
+  url: string
+}
+
+type FrontendEntry =
+  | ({ kind: 'page' } & FrontendPage)
+  | ({ kind: 'post' } & FrontendBlogPost)
+
 function renderMarkdown(markdown: string) {
   const lines = markdown.split('\n')
   const elements: React.ReactNode[] = []
@@ -94,9 +115,36 @@ function renderMarkdown(markdown: string) {
   return elements
 }
 
-async function getPageBySlug(locale: LocaleCode, slug: string) {
+function formatDate(value: string | null | undefined, locale: LocaleCode) {
+  if (!value) {
+    return locale === 'de' ? 'Aktuell' : 'Current'
+  }
+
+  return new Intl.DateTimeFormat(locale === 'de' ? 'de-DE' : 'en-US', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(value))
+}
+
+function getFeaturedImage(post: FrontendBlogPost) {
+  if (!post.featuredImage || typeof post.featuredImage === 'number') {
+    return null
+  }
+
+  if (!post.featuredImage.url) {
+    return null
+  }
+
+  return {
+    alt: post.featuredImage.alt || post.title,
+    url: post.featuredImage.url,
+  }
+}
+
+async function getEntryBySlug(locale: LocaleCode, slug: string) {
   const payload = await getPayload({ config: await getPayloadConfig() })
-  const [pageResult, navigationResult, footerResult] = await Promise.all([
+  const [pageResult, blogPostResult, navigationResult, footerResult] = await Promise.all([
     payload.find({
       collection: 'pages' as never,
       depth: 0,
@@ -104,6 +152,19 @@ async function getPageBySlug(locale: LocaleCode, slug: string) {
       limit: 1,
       locale,
       sort: '-createdAt',
+      where: {
+        url: {
+          equals: slug,
+        },
+      },
+    }),
+    payload.find({
+      collection: 'blog-posts' as never,
+      depth: 1,
+      fallbackLocale: 'de',
+      limit: 1,
+      locale,
+      sort: '-publishedAt',
       where: {
         url: {
           equals: slug,
@@ -137,7 +198,27 @@ async function getPageBySlug(locale: LocaleCode, slug: string) {
       navigationResult.docs as Array<{ href: string; label: string; openInNewTab?: boolean | null }>,
       getFallbackNavItems(locale),
     ),
-    page: (pageResult.docs[0] as FrontendPage | undefined) ?? null,
+    entry: (() => {
+      const page = pageResult.docs[0] as FrontendPage | undefined
+
+      if (page) {
+        return {
+          kind: 'page',
+          ...page,
+        } satisfies FrontendEntry
+      }
+
+      const post = blogPostResult.docs[0] as FrontendBlogPost | undefined
+
+      if (post) {
+        return {
+          kind: 'post',
+          ...post,
+        } satisfies FrontendEntry
+      }
+
+      return null
+    })(),
   }
 }
 
@@ -152,9 +233,9 @@ export async function generateMetadata({
     return {}
   }
 
-  const { page } = await getPageBySlug(locale, slug)
+  const { entry } = await getEntryBySlug(locale, slug)
 
-  if (!page) {
+  if (!entry) {
     return {
       title: 'Page not found | spacepc.de',
     }
@@ -163,9 +244,9 @@ export async function generateMetadata({
   return {
     alternates: getLocalizedAlternates(slug),
     description:
-      page.seoDescription ||
-      (locale === 'de' ? `${page.title} auf spacepc.de` : `${page.title} on spacepc.de`),
-    title: page.seoTitle || `${page.title} | spacepc.de`,
+      entry.seoDescription ||
+      (locale === 'de' ? `${entry.title} auf spacepc.de` : `${entry.title} on spacepc.de`),
+    title: entry.seoTitle || `${entry.title} | spacepc.de`,
   }
 }
 
@@ -180,11 +261,13 @@ export default async function LocalizedStaticPage({
     notFound()
   }
 
-  const { footerLinks, navItems, page } = await getPageBySlug(locale, slug)
+  const { entry, footerLinks, navItems } = await getEntryBySlug(locale, slug)
 
-  if (!page) {
+  if (!entry) {
     notFound()
   }
+
+  const featuredImage = entry.kind === 'post' ? getFeaturedImage(entry) : null
 
   return (
     <div className="site-shell">
@@ -218,16 +301,39 @@ export default async function LocalizedStaticPage({
       <main className="content-page">
         <section className="section content-page__hero">
           <p className="eyebrow">
-            {page.isLegalPage ? (locale === 'de' ? 'Rechtliches' : 'Legal') : locale === 'de' ? 'Seite' : 'Page'}
+            {entry.kind === 'post'
+              ? locale === 'de'
+                ? 'Blog'
+                : 'Blog'
+              : entry.isLegalPage
+                ? locale === 'de'
+                  ? 'Rechtliches'
+                  : 'Legal'
+                : locale === 'de'
+                  ? 'Seite'
+                  : 'Page'}
           </p>
-          <h1>{page.title}</h1>
+          <h1>{entry.title}</h1>
+          {entry.kind === 'post' ? (
+            <p className="story-meta content-page__meta">{formatDate(entry.publishedAt, locale)}</p>
+          ) : null}
         </section>
 
         <section className="section">
           <article className="content-page__card">
+            {featuredImage ? (
+              <div className="content-page__image-wrap">
+                <img
+                  alt={featuredImage.alt}
+                  className="content-page__image"
+                  loading="eager"
+                  src={featuredImage.url}
+                />
+              </div>
+            ) : null}
             <div className="content-page__body">
-              {page.contentMarkdown?.trim() ? (
-                renderMarkdown(page.contentMarkdown)
+              {entry.contentMarkdown?.trim() ? (
+                renderMarkdown(entry.contentMarkdown)
               ) : (
                 <p>{locale === 'de' ? 'Diese Seite enthaelt noch keinen Inhalt.' : 'This page has no content yet.'}</p>
               )}
