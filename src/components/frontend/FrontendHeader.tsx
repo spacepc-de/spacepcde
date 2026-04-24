@@ -1,6 +1,6 @@
 import { getPayload } from 'payload'
 
-import { getFallbackNavItems, mapLinks, type LocaleCode } from '@/lib/frontend'
+import { getFallbackNavItems, mapLinks, type LinkItem, type LocaleCode } from '@/lib/frontend'
 import type { NavigationLink } from '@/payload-types'
 import { getPayloadConfig } from '@/payload.config'
 
@@ -10,25 +10,29 @@ type Props = {
   currentPath: string
   locale: LocaleCode
   localeSwitchHref?: string
+  navItems?: LinkItem[]
 }
 
-export async function FrontendHeader({ currentPath, locale, localeSwitchHref }: Props) {
-  const payload = await getPayload({ config: await getPayloadConfig() })
+export async function FrontendHeader({ currentPath, locale, localeSwitchHref, navItems: navItemsProp }: Props) {
+  let navItems = navItemsProp
 
-  const navigationResult = await payload.find({
-    collection: 'navigation-links',
-    depth: 0,
-    fallbackLocale: 'de',
-    limit: 20,
-    locale,
-    sort: 'order',
-  })
+  if (!navItems) {
+    const payload = await getPayload({ config: await getPayloadConfig() })
+    const navigationResult = await payload.find({
+      collection: 'navigation-links',
+      depth: 0,
+      fallbackLocale: 'de',
+      limit: 20,
+      locale,
+      sort: 'order',
+    })
 
-  const navItems = mapLinks(
-    locale,
-    navigationResult.docs as NavigationLink[],
-    getFallbackNavItems(locale),
-  )
+    navItems = mapLinks(
+      locale,
+      navigationResult.docs as NavigationLink[],
+      getFallbackNavItems(locale),
+    )
+  }
 
   return (
     <SiteHeader

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import type { BlogPost, FooterLink } from '@/payload-types'
+import { FeaturedPostImage } from '@/components/frontend/FeaturedPostImage'
 import { FrontendHeader } from '@/components/frontend/FrontendHeader'
 import {
   buildPostSummary,
@@ -235,10 +236,11 @@ export default async function LocalizedHomePage({
             <article className="lead-story">
               <div className="lead-story__visual">
                 {leadPost && getFeaturedImage(leadPost) ? (
-                  <img
-                    alt={getFeaturedImage(leadPost)?.alt || leadPost.title}
+                  <FeaturedPostImage
                     className="card-preview card-preview--lead"
-                    src={getFeaturedImage(leadPost)?.url || ''}
+                    post={leadPost}
+                    priority
+                    sizes="(max-width: 900px) 100vw, 60vw"
                   />
                 ) : (
                   <>
@@ -270,10 +272,10 @@ export default async function LocalizedHomePage({
                 ? supportingPosts.map((post) => (
                     <Link className="story-card story-card--link" href={`/${locale}/${post.url}`} key={post.id}>
                       {getFeaturedImage(post) ? (
-                        <img
-                          alt={getFeaturedImage(post)?.alt || post.title}
+                        <FeaturedPostImage
                           className="card-preview card-preview--compact"
-                          src={getFeaturedImage(post)?.url || ''}
+                          post={post}
+                          sizes="(max-width: 900px) 100vw, 30vw"
                         />
                       ) : null}
                       <p className="story-meta">
@@ -307,10 +309,10 @@ export default async function LocalizedHomePage({
                   featuredPosts.map((post) => (
                     <Link className="featured-post" href={`/${locale}/${post.url}`} key={post.id}>
                       {getFeaturedImage(post) ? (
-                        <img
-                          alt={getFeaturedImage(post)?.alt || post.title}
+                        <FeaturedPostImage
                           className="card-preview card-preview--compact"
-                          src={getFeaturedImage(post)?.url || ''}
+                          post={post}
+                          sizes="(max-width: 900px) 100vw, 24vw"
                         />
                       ) : null}
                       <p className="story-meta">
@@ -334,10 +336,10 @@ export default async function LocalizedHomePage({
                   latestPosts.map((post) => (
                     <Link className="latest-post latest-post--link" href={`/${locale}/${post.url}`} key={post.id}>
                       {getFeaturedImage(post) ? (
-                        <img
-                          alt={getFeaturedImage(post)?.alt || post.title}
+                        <FeaturedPostImage
                           className="card-preview card-preview--compact"
-                          src={getFeaturedImage(post)?.url || ''}
+                          post={post}
+                          sizes="(max-width: 900px) 100vw, 38vw"
                         />
                       ) : null}
                       <p className="story-meta">{formatBlogDate(post.publishedAt, locale)}</p>

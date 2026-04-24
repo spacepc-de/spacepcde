@@ -8,7 +8,17 @@ import { blogContentEditor, syncBlogContent } from '../lib/blogContent'
 export const BlogPosts: CollectionConfig = {
   slug: 'blog-posts',
   access: {
-    read: () => true,
+    read: ({ req }) => {
+      if (req.user) {
+        return true
+      }
+
+      return {
+        status: {
+          equals: 'published',
+        },
+      }
+    },
   },
   hooks: {
     afterRead: [

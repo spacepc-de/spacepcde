@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { cache } from 'react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { FeaturedPostImage } from '@/components/frontend/FeaturedPostImage'
 import { FrontendHeader } from '@/components/frontend/FrontendHeader'
 import { PostComments } from '@/components/frontend/PostComments'
 import {
@@ -14,15 +15,17 @@ import {
   isPopulatedCategory,
   isPopulatedTag,
 } from '@/lib/blog-frontend'
-import { renderMarkdownToHtml } from '@/lib/markdown'
+import { getApprovedCommentsForPost } from '@/lib/comments'
 import { getPayloadConfig } from '@/payload.config'
 import {
   getExactLocalizedAlternates,
   getFallbackFooterLinks,
+  getFallbackNavItems,
   isLocaleCode,
   mapLinks,
   type LocaleCode,
 } from '@/lib/frontend'
+import { renderMarkdownToHtml } from '@/lib/markdown'
 
 export const revalidate = 21600
 
@@ -54,7 +57,9 @@ type FrontendBlogPost = {
   featuredImage?:
     | {
         alt?: string | null
+        height?: number | null
         url?: string | null
+        width?: number | null
       }
     | number
     | null
@@ -80,17 +85,9 @@ type FrontendEntry =
   | ({ kind: 'page' } & FrontendPage)
   | ({ kind: 'post' } & FrontendBlogPost)
 
-type FrontendComment = {
-  authorName: string
-  content: string
-  createdAt: string
-  id: number
-  parent?: number | { id: number } | null
-}
-
-async function getEntryBySlug(locale: LocaleCode, slug: string) {
+const getEntryBySlug = cache(async (locale: LocaleCode, slug: string) => {
   const payload = await getPayload({ config: await getPayloadConfig() })
-  const [pageResult, blogPostResult, footerResult] = await Promise.all([
+  const [pageResult, blogPostResult, footerResult, navigationResult] = await Promise.all([
     payload.find({
       collection: 'pages' as never,
       depth: 0,
@@ -128,6 +125,14 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
     }),
     payload.find({
       collection: 'footer-links' as never,
+      depth: 0,
+      fallbackLocale: 'de',
+      limit: 20,
+      locale,
+      sort: 'order',
+    }),
+    payload.find({
+      collection: 'navigation-links' as never,
       depth: 0,
       fallbackLocale: 'de',
       limit: 20,
@@ -179,43 +184,7 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
     }
   }
 
-  const commentsResult =
-    post?.id
-      ? await payload.find({
-          collection: 'comments' as never,
-          depth: 1,
-          limit: 100,
-          sort: 'createdAt',
-          where: {
-            and: [
-              {
-                approved: {
-                  equals: true,
-                },
-              },
-              {
-                post: {
-                  equals: post.id,
-                },
-              },
-            ],
-          },
-        })
-      : null
-
   return {
-    comments: ((commentsResult?.docs ?? []) as FrontendComment[]).map(
-      (comment): { authorName: string; content: string; createdAt: string; id: number; parent?: number | null } => ({
-        authorName: comment.authorName,
-        content: comment.content,
-        createdAt: comment.createdAt,
-        id: comment.id,
-        parent:
-          typeof comment.parent === 'object' && comment.parent
-            ? (comment.parent as { id: number }).id
-            : ((comment.parent as number | null | undefined) ?? null),
-      }),
-    ),
     footerLinks: mapLinks(
       locale,
       footerResult.docs as Array<{ href: string; label: string; openInNewTab?: boolean | null }>,
@@ -223,8 +192,18 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
     ),
     entry,
     localeSwitchHref,
+    navItems: mapLinks(
+      locale,
+      navigationResult.docs as Array<{
+        children?: Array<{ href: string; label: string; openInNewTab?: boolean | null }> | null
+        href: string
+        label: string
+        openInNewTab?: boolean | null
+      }>,
+      getFallbackNavItems(locale),
+    ),
   }
-}
+})
 
 export async function generateMetadata({
   params,
@@ -268,11 +247,14 @@ export default async function LocalizedStaticPage({
     notFound()
   }
 
-  const { comments, entry, footerLinks, localeSwitchHref } = await getEntryBySlug(locale, slug)
+  const { entry, footerLinks, localeSwitchHref, navItems } = await getEntryBySlug(locale, slug)
 
   if (!entry) {
     notFound()
   }
+
+  const payload = await getPayload({ config: await getPayloadConfig() })
+  const comments = entry.kind === 'post' ? await getApprovedCommentsForPost(payload, entry.id) : []
 
   const featuredImage = entry.kind === 'post' ? getFeaturedImage(entry) : null
   const productGroups =
@@ -292,6 +274,7 @@ export default async function LocalizedStaticPage({
         currentPath={`/${locale}/${entry.url}`}
         locale={locale}
         localeSwitchHref={localeSwitchHref}
+        navItems={navItems}
       />
 
       <main className="content-page">
@@ -327,11 +310,11 @@ export default async function LocalizedStaticPage({
             <article className="content-page__card">
               {featuredImage ? (
                 <div className="content-page__image-wrap">
-                  <img
-                    alt={featuredImage.alt}
+                  <FeaturedPostImage
                     className="content-page__image"
-                    loading="eager"
-                    src={featuredImage.url}
+                    post={entry}
+                    priority
+                    sizes="(max-width: 900px) 100vw, 70vw"
                   />
                 </div>
               ) : null}
@@ -416,7 +399,9 @@ export default async function LocalizedStaticPage({
           ) : null}
         </section>
 
-        {entry.kind === 'post' ? <PostComments comments={comments} locale={locale} postId={entry.id} /> : null}
+        {entry.kind === 'post' ? (
+          <PostComments initialComments={comments} locale={locale} postId={entry.id} />
+        ) : null}
       </main>
 
       <footer className="site-footer">

@@ -1,17 +1,13 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useEffectEvent, useMemo, useState } from 'react'
 
-type CommentItem = {
-  authorName: string
-  content: string
-  createdAt: string
-  id: number
-  parent?: number | null
-}
+import type { ApprovedComment } from '@/lib/comments'
+
+type CommentItem = ApprovedComment
 
 type Props = {
-  comments: CommentItem[]
+  initialComments: CommentItem[]
   locale: 'de' | 'en'
   postId: number
 }
@@ -20,12 +16,14 @@ type FormState = {
   authorEmail: string
   authorName: string
   content: string
+  website: string
 }
 
 const initialFormState: FormState = {
   authorEmail: '',
   authorName: '',
   content: '',
+  website: '',
 }
 
 function formatCommentDate(value: string, locale: 'de' | 'en') {
@@ -36,11 +34,36 @@ function formatCommentDate(value: string, locale: 'de' | 'en') {
   }).format(new Date(value))
 }
 
-export function PostComments({ comments, locale, postId }: Props) {
+export function PostComments({ initialComments, locale, postId }: Props) {
   const [form, setForm] = useState<FormState>(initialFormState)
   const [isLoading, setIsLoading] = useState(false)
+  const [comments, setComments] = useState<CommentItem[]>(initialComments)
   const [message, setMessage] = useState<string | null>(null)
   const [replyTo, setReplyTo] = useState<number | null>(null)
+
+  const refreshComments = useEffectEvent(async () => {
+    try {
+      const response = await fetch(`/api/comments?postId=${postId}`, {
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        return
+      }
+
+      const json = (await response.json()) as { comments?: CommentItem[] }
+
+      if (Array.isArray(json.comments)) {
+        setComments(json.comments)
+      }
+    } catch {
+      // Keep the server-rendered comments when the refresh fails.
+    }
+  })
+
+  useEffect(() => {
+    void refreshComments()
+  }, [postId, refreshComments])
 
   const { roots, repliesByParent } = useMemo(() => {
     const roots: CommentItem[] = []
@@ -125,6 +148,7 @@ export function PostComments({ comments, locale, postId }: Props) {
       setForm(initialFormState)
       setReplyTo(null)
       setMessage(json.message ?? labels.success)
+      await refreshComments()
     } catch {
       setMessage(locale === 'de' ? 'Kommentar konnte nicht gespeichert werden.' : 'Comment could not be saved.')
     } finally {
@@ -173,6 +197,21 @@ export function PostComments({ comments, locale, postId }: Props) {
 
         <form className="comment-form" onSubmit={onSubmit}>
           <p className="eyebrow">{replyTo ? labels.replyTo : labels.title}</p>
+          <div
+            aria-hidden="true"
+            style={{ left: '-10000px', position: 'absolute', top: 'auto' }}
+          >
+            <label htmlFor="comment-website">Website</label>
+            <input
+              autoComplete="off"
+              id="comment-website"
+              name="website"
+              onChange={onChange('website')}
+              tabIndex={-1}
+              type="text"
+              value={form.website}
+            />
+          </div>
           <div className="comment-form__grid">
             <label>
               <span>{labels.name}</span>

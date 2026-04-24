@@ -5,6 +5,12 @@ import type { LocaleCode } from './frontend'
 export type PopulatedCategory = { id: number; title: string; url: string }
 export type PopulatedTag = { id: number; title: string; url: string }
 export type PopulatedMedia = Media
+export type FeaturedImageData = {
+  alt: string
+  height: number
+  url: string
+  width: number
+}
 type CategoryLike = number | { id: number; title: string; url: string } | null
 type TagLike = number | { id: number; title: string; url: string } | null
 
@@ -48,9 +54,12 @@ export function isPopulatedTag(value: TagLike[] | BlogPost['tags']): value is Po
 }
 
 export function getFeaturedImage(post: {
-  featuredImage?: { alt?: string | null; url?: string | null } | number | null
+  featuredImage?:
+    | { alt?: string | null; height?: number | null; url?: string | null; width?: number | null }
+    | number
+    | null
   title: string
-}): { alt: string; url: string } | null {
+}): FeaturedImageData | null {
   if (!post.featuredImage || typeof post.featuredImage === 'number') {
     return null
   }
@@ -61,7 +70,9 @@ export function getFeaturedImage(post: {
 
   return {
     alt: post.featuredImage.alt || post.title,
+    height: post.featuredImage.height || 900,
     url: post.featuredImage.url,
+    width: post.featuredImage.width || 1600,
   }
 }
 

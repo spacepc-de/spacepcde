@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { FeaturedPostImage } from '@/components/frontend/FeaturedPostImage'
 import { FrontendHeader } from '@/components/frontend/FrontendHeader'
 import {
   buildPostSummary,
@@ -125,10 +126,10 @@ export default async function BlogIndexPage({
             {posts.map((post) => (
               <article className="blog-list-card" key={post.id}>
                 {getFeaturedImage(post) ? (
-                  <img
-                    alt={getFeaturedImage(post)?.alt || post.title}
+                  <FeaturedPostImage
                     className="card-preview card-preview--list"
-                    src={getFeaturedImage(post)?.url || ''}
+                    post={post}
+                    sizes="(max-width: 900px) 100vw, 66vw"
                   />
                 ) : null}
                 <p className="story-meta">

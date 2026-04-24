@@ -12,6 +12,8 @@ import * as migration_20260424_084500_blog_posts_status_field from './20260424_0
 import * as migration_20260424_091500_navigation_link_children from './20260424_091500_navigation_link_children'
 import * as migration_20260424_094500_blog_posts_featured from './20260424_094500_blog_posts_featured'
 import * as migration_20260424_103000_legacy_blog_redirects from './20260424_103000_legacy_blog_redirects'
+import * as migration_20260424_164500_comment_rate_limits from './20260424_164500_comment_rate_limits'
+import * as migration_20260424_171500_comments_lookup_index from './20260424_171500_comments_lookup_index'
 
 export const migrations = [
   {
@@ -83,5 +85,15 @@ export const migrations = [
     up: migration_20260424_103000_legacy_blog_redirects.up,
     down: migration_20260424_103000_legacy_blog_redirects.down,
     name: '20260424_103000_legacy_blog_redirects',
+  },
+  {
+    up: migration_20260424_164500_comment_rate_limits.up,
+    down: migration_20260424_164500_comment_rate_limits.down,
+    name: '20260424_164500_comment_rate_limits',
+  },
+  {
+    up: migration_20260424_171500_comments_lookup_index.up,
+    down: migration_20260424_171500_comments_lookup_index.down,
+    name: '20260424_171500_comments_lookup_index',
   },
 ]
