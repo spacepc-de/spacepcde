@@ -48,7 +48,36 @@ export function getFallbackFooterLinks(locale: LocaleCode): LinkItem[] {
   ]
 }
 
+function localizeInternalHref(locale: LocaleCode, href: string) {
+  if (!href) {
+    return `/${locale}`
+  }
+
+  if (/^(https?:|mailto:|tel:)/.test(href)) {
+    return href
+  }
+
+  if (href.startsWith('#')) {
+    return `/${locale}${href}`
+  }
+
+  if (href === '/') {
+    return `/${locale}`
+  }
+
+  if (/^\/(de|en)(\/|$)/.test(href)) {
+    return href
+  }
+
+  if (href.startsWith('/')) {
+    return `/${locale}${href}`
+  }
+
+  return `/${locale}/${href.replace(/^\/+/, '')}`
+}
+
 export function mapLinks(
+  locale: LocaleCode,
   items: Array<{ href: string; label: string; openInNewTab?: boolean | null }>,
   fallback: LinkItem[],
 ): LinkItem[] {
@@ -57,7 +86,7 @@ export function mapLinks(
   }
 
   return items.map((item) => ({
-    href: item.href,
+    href: localizeInternalHref(locale, item.href),
     label: item.label,
     openInNewTab: Boolean(item.openInNewTab),
   }))

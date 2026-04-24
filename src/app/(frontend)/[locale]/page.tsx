@@ -4,7 +4,16 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import type { BlogPost, FooterLink, NavigationLink, ProductGroup } from '@/payload-types'
+import type { BlogPost, FooterLink, NavigationLink } from '@/payload-types'
+import {
+  buildPostSummary,
+  estimateReadingTime,
+  formatBlogDate,
+  getPostTextContent,
+  isPopulatedCategory,
+  isPopulatedTag,
+} from '@/lib/blog-frontend'
+import type { PopulatedCategory, PopulatedTag } from '@/lib/blog-frontend'
 import {
   getFallbackFooterLinks,
   getFallbackNavItems,
@@ -21,210 +30,105 @@ export const dynamic = 'force-dynamic'
 const copy = {
   de: {
     contactBody:
-      'Kurz sagen, was gebraucht wird. Die Seite verbindet Leistungen, technische Themen und konkrete Kontaktmoeglichkeit in einer gemeinsamen Sprache.',
-    contactCta: 'Anfrage senden',
-    contactTitle: 'Bereit fuer IT Service mit klarer Kommunikation statt Agentur-Blabla.',
+      'Wenn ein System hakt, eine Migration ansteht oder Infrastruktur aufgeraeumt werden muss, reicht eine kurze Mail mit dem Kontext.',
+    contactTitle: 'Kontakt',
     current: 'Aktuell',
     footerText:
-      'IT Service, Blog und technische Inhalte auf einer gemeinsamen Payload-Basis. Klar, direkt und ohne unnoetigen Ueberbau.',
-    headline:
-      'Technische Inhalte und direkter IT Service. Klar aufgebaut, schnell geladen und ohne Chaos im Hintergrund.',
-    heroCtaPrimary: 'Leistungen ansehen',
-    heroCtaSecondary: 'Neueste Beitraege',
-    heroEyebrow: 'IT Service und Blog aus einem System',
-    heroLead:
-      'Die Startseite verbindet Blog, Service und konkrete Leistungen in einer gemeinsamen Struktur. Keine laute Agenturansprache, sondern klare Information, technische Substanz und Inhalte, die sich sauber aus dem CMS pflegen lassen.',
+      'Technische Inhalte, Infrastruktur-Themen und praktische Anleitungen auf einer gemeinsamen Payload-Basis.',
+    featuredColumnLabel: 'Featured',
+    featuredHeading: 'Ausgewaehlte Beitraege',
+    headline: 'Technische Notizen, Anleitungen und Infrastruktur-Themen.',
+    heroCtaPrimary: 'Leitartikel',
+    heroCtaSecondary: 'Zum Blog',
+    heroEyebrow: 'spacepc.de',
+    heroLead: 'Neue Texte, ausgewaehlte Beitraege und ein direkter Weg ins Archiv.',
     latestFallbackBody:
-      'Damit wird aus der Startseite Schritt fuer Schritt eine Kombination aus IT-Service-Flaeche und technischer Publikation.',
+      'Sobald weitere Blogbeitraege vorliegen, fuellt sich dieser Bereich automatisch.',
     latestFallbackTitle: 'Nach dem ersten publizierten Beitrag fuellt sich diese Liste automatisch.',
-    latestHeading:
-      'Neue Beitraege bleiben schnell erfassbar und zeigen laufend, womit sich Service und Blog aktuell beschaeftigen.',
-    latestLabel: 'Aktuell',
+    latestHeading: 'Neu im Blog',
+    latestLabel: 'Neu',
     notYet: 'Inhalt folgt',
-    offerHeading:
-      'Produktgruppen und Leistungsbausteine geben dem Service einen klaren Rahmen und schaffen Anschluss an die Inhalte.',
-    offerLabel: 'Angebot',
     pageTitle: 'spacepc.de | Systeme, Support und technische Inhalte',
     positionBody:
-      'Orientierung an spacepc.dev: direkt, sachlich, technisch. Service und Blog stehen nicht nebeneinander, sondern zahlen sichtbar auf dasselbe Angebot ein.',
-    positionLabel: 'Positionierung',
-    productsEmpty:
-      'Leistungsbausteine erscheinen automatisch, sobald sie im Backend gepflegt sind.',
-    productsEmptyBody:
-      'Die Struktur ist bereits angebunden. Es fehlen nur noch echte Eintraege in der Collection product-groups.',
-    productsMetric: 'Produktgruppen',
+      'Die Startseite priorisiert Inhalte. Das Angebot bleibt sichtbar, aber nachgeordnet und ohne typische Landingpage-Rhetorik.',
+    positionLabel: 'Einordnung',
     publishedFallback:
-      'Sobald Blogbeitraege im Backend vorliegen, erscheint hier automatisch der aktuellste Artikel als Leitbeitrag.',
+      'Sobald Blogbeitraege im Backend vorliegen, erscheint hier automatisch der Leitartikel.',
     publishedFallbackTitle:
-      'Technische Inhalte, die Vertrauen schaffen und direkt an reale IT-Themen anschliessen.',
+      'Ein Leitartikel fuer die Startseite erscheint automatisch mit dem ersten Beitrag.',
     request: 'Anfrage senden',
-    serviceCards: [
-      {
-        body: 'Hilfe bei Linux, Hosting, Automatisierung, Self-Hosting und laufenden Systemen. Direkt, nachvollziehbar und ohne unnoetige Vertriebssprache.',
-        title: 'IT Service',
-      },
-      {
-        body: 'Artikel, Anleitungen und technische Einordnungen, die wie brauchbare Arbeitsnotizen wirken und gleichzeitig Vertrauen in die Leistung schaffen.',
-        title: 'Blog mit Praxisbezug',
-      },
-      {
-        body: 'Blog, Produktgruppen und Service-Bausteine sind nicht getrennt gedacht. Das Frontend verbindet Wissen mit konkreten naechsten Schritten.',
-        title: 'Inhalte und Angebot verbunden',
-      },
-    ],
-    servicesHeading:
-      'IT Service fuer Unternehmen und Selbststaendige, plus ein Blog mit praktischen technischen Inhalten.',
-    servicesLabel: 'Leistungen',
     storyFallback: [
       {
-        body: 'Die Seite zeigt Wissen nicht als Deko, sondern als Teil eines klaren technischen Angebots.',
+        body: 'Die Startseite priorisiert Inhalte und haelt die Wege kurz.',
         meta: 'Beispiel / 3 Min.',
-        title: 'Blog und Service sollten dieselbe Sprache sprechen.',
+        title: 'Ein ruhiger Einstieg statt Agenturtext.',
       },
       {
-        body: 'Wer die Artikel liest, versteht schneller, wie Support, Infrastruktur und Betrieb konkret aussehen.',
+        body: 'Archiv, Kategorien und einzelne Beitraege bleiben direkt erreichbar.',
         meta: 'Beispiel / 2 Min.',
-        title: 'Praxisnahe Inhalte machen IT Service leichter verstaendlich.',
+        title: 'Das Frontend ordnet Inhalte statt sie zu uebertoenen.',
       },
     ],
-    storyHeading:
-      'Der Blog zeigt Fachwissen, das den Service glaubwuerdig macht: praxisnah, lesbar und ohne Marketing-Theater.',
-    storyLabel: 'Blog',
-    systemLabels: {
-      blogposts: 'Blogposts',
-      language: 'Sprache',
-      nav: 'Navigationspunkte',
-    },
+    storyHeading: 'Im Fokus',
+    storyLabel: 'Leitartikel',
   },
   en: {
     contactBody:
-      'Say briefly what is needed. The site combines services, technical topics, and a direct contact path in one consistent voice.',
-    contactCta: 'Send request',
-    contactTitle: 'Ready for IT service with clear communication instead of agency language.',
+      'If a system is unstable, a migration is pending, or infrastructure needs cleanup, a short email with context is enough.',
+    contactTitle: 'Contact',
     current: 'Current',
     footerText:
-      'IT service, blog, and technical content on one shared Payload base. Clear, direct, and without unnecessary overhead.',
-    headline:
-      'Technical content and direct IT service. Clearly structured, fast, and without chaos behind the scenes.',
-    heroCtaPrimary: 'View services',
-    heroCtaSecondary: 'Latest posts',
-    heroEyebrow: 'IT service and blog from one system',
-    heroLead:
-      'The homepage combines blog, service, and concrete offerings in one shared structure. No loud agency tone, just clear information, technical substance, and content that can be maintained cleanly in the CMS.',
+      'Technical writing, infrastructure topics, and practical guides on one shared Payload base.',
+    featuredColumnLabel: 'Featured',
+    featuredHeading: 'Selected posts',
+    headline: 'Technical notes, guides, and infrastructure topics.',
+    heroCtaPrimary: 'Lead story',
+    heroCtaSecondary: 'Go to blog',
+    heroEyebrow: 'spacepc.de',
+    heroLead: 'Fresh writing, selected posts, and a direct path into the archive.',
     latestFallbackBody:
-      'This gradually turns the homepage into a combination of service surface and technical publication.',
+      'As soon as more posts are published, this area fills automatically.',
     latestFallbackTitle: 'After the first published post, this list fills automatically.',
-    latestHeading:
-      'New posts stay easy to scan and show what the service and blog are currently working on.',
-    latestLabel: 'Current',
+    latestHeading: 'New in the blog',
+    latestLabel: 'New',
     notYet: 'Content coming soon',
-    offerHeading:
-      'Product groups and service building blocks give the service a clear frame and connect it to the content.',
-    offerLabel: 'Offer',
     pageTitle: 'spacepc.de | Systems, support, and technical content',
     positionBody:
-      'Inspired by spacepc.dev: direct, factual, technical. Service and blog do not sit next to each other; they clearly support the same offer.',
-    positionLabel: 'Positioning',
-    productsEmpty: 'Service building blocks appear automatically once they are maintained in the backend.',
-    productsEmptyBody:
-      'The structure is already connected. Only real entries in the product-groups collection are still missing.',
-    productsMetric: 'Product groups',
+      'The homepage prioritises content. Services remain visible, but secondary and without typical landing-page rhetoric.',
+    positionLabel: 'Editorial note',
     publishedFallback:
-      'As soon as blog posts exist in the backend, the latest article appears here automatically as the lead story.',
+      'As soon as blog posts exist in the backend, the lead story appears here automatically.',
     publishedFallbackTitle:
-      'Technical content that builds trust and connects directly to real IT topics.',
+      'A lead article for the homepage appears automatically with the first post.',
     request: 'Send request',
-    serviceCards: [
-      {
-        body: 'Support for Linux, hosting, automation, self-hosting, and running systems. Direct, understandable, and without unnecessary sales language.',
-        title: 'IT service',
-      },
-      {
-        body: 'Articles, guides, and technical assessments that read like useful working notes and still strengthen trust in the service.',
-        title: 'Blog with practical value',
-      },
-      {
-        body: 'Blog, product groups, and service building blocks are not treated separately. The frontend connects knowledge with concrete next steps.',
-        title: 'Content and offer connected',
-      },
-    ],
-    servicesHeading:
-      'IT service for companies and independent professionals, plus a blog with practical technical content.',
-    servicesLabel: 'Services',
     storyFallback: [
       {
-        body: 'The site presents knowledge not as decoration, but as part of a clear technical offer.',
+        body: 'The homepage prioritises content and keeps the paths short.',
         meta: 'Example / 3 min.',
-        title: 'Blog and service should speak the same language.',
+        title: 'A calmer entry point instead of agency copy.',
       },
       {
-        body: 'People who read the articles understand more quickly what support, infrastructure, and day-to-day operations actually look like.',
+        body: 'Archive, categories, and posts stay directly accessible.',
         meta: 'Example / 2 min.',
-        title: 'Practical content makes IT service easier to understand.',
+        title: 'The frontend organises content instead of talking over it.',
       },
     ],
-    storyHeading:
-      'The blog shows expertise that makes the service credible: practical, readable, and without marketing theatre.',
-    storyLabel: 'Blog',
-    systemLabels: {
-      blogposts: 'Blog posts',
-      language: 'Language',
-      nav: 'Navigation items',
-    },
+    storyHeading: 'In focus',
+    storyLabel: 'Lead story',
   },
 } as const
 
-const defaultHighlights: Record<LocaleCode, string[]> = {
-  de: [
-    'IT Service, Blog und Produktbezug in einer klaren technischen Oberflaeche.',
-    'Schnell, wartungsarm und ohne unnoetigen Tool- oder Plugin-Ballast.',
-    'Inhalte pflegbar im CMS, Technik sauber im Hintergrund.',
-  ],
-  en: [
-    'IT service, blog, and product context in one clear technical interface.',
-    'Fast, low-maintenance, and without unnecessary tool or plugin overhead.',
-    'Content maintained in the CMS, technology kept clean in the background.',
-  ],
-}
-
-function formatDate(value: string | null | undefined, locale: LocaleCode) {
-  if (!value) {
-    return copy[locale].current
-  }
-
-  return new Intl.DateTimeFormat(locale === 'de' ? 'de-DE' : 'en-US', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(value))
-}
-
-function estimateReadingTime(text: string, locale: LocaleCode) {
-  const words = text.trim().split(/\s+/).filter(Boolean).length
-  const minutes = Math.max(2, Math.round(words / 180))
-  return locale === 'de' ? `${minutes} Min.` : `${minutes} min.`
-}
-
-function getPostTextContent(post: BlogPost) {
-  return post.contentMarkdown?.trim() || ''
-}
-
-function buildSummary(post: BlogPost) {
-  const content = getPostTextContent(post)
-
-  return (
-    post.excerpt?.trim() ||
-    `${content.replace(/\s+/g, ' ').slice(0, 180).trim()}${content.length > 180 ? '...' : ''}`
-  )
-}
-
-function isPopulatedProductGroup(value: BlogPost['productGroups']): value is ProductGroup[] {
-  return Array.isArray(value) && value.every((item) => typeof item === 'object' && item !== null)
+function isFeaturedPost(post: BlogPost) {
+  return isPopulatedCategory(post.categories)
+    ? (post.categories as PopulatedCategory[]).some(
+        (category) => category.url === 'featured' || category.title.toLowerCase() === 'featured',
+      )
+    : false
 }
 
 async function getHomeData(locale: LocaleCode) {
   const payload = await getPayload({ config: await getPayloadConfig() })
-  const [navigationResult, footerResult, postsResult, productGroupsResult] = await Promise.all([
+  const [navigationResult, footerResult, postsResult] = await Promise.all([
     payload.find({
       collection: 'navigation-links',
       depth: 0,
@@ -245,25 +149,16 @@ async function getHomeData(locale: LocaleCode) {
       collection: 'blog-posts',
       depth: 2,
       fallbackLocale: 'de',
-      limit: 6,
+      limit: 12,
       locale,
       sort: '-publishedAt',
-    }),
-    payload.find({
-      collection: 'product-groups',
-      depth: 1,
-      fallbackLocale: 'de',
-      limit: 4,
-      locale,
-      sort: '-createdAt',
     }),
   ])
 
   return {
-    footerLinks: mapLinks(footerResult.docs as FooterLink[], getFallbackFooterLinks(locale)),
-    navItems: mapLinks(navigationResult.docs as NavigationLink[], getFallbackNavItems(locale)),
+    footerLinks: mapLinks(locale, footerResult.docs as FooterLink[], getFallbackFooterLinks(locale)),
+    navItems: mapLinks(locale, navigationResult.docs as NavigationLink[], getFallbackNavItems(locale)),
     posts: postsResult.docs as BlogPost[],
-    productGroups: productGroupsResult.docs as ProductGroup[],
   }
 }
 
@@ -300,23 +195,12 @@ export default async function LocalizedHomePage({
   }
 
   const localizedCopy = copy[locale]
-  const { footerLinks, navItems, posts, productGroups } = await getHomeData(locale)
-  const leadPost = posts[0]
-  const supportingPosts = posts.slice(1, 4)
-  const latestPosts = posts.slice(0, 4)
-  const leadProductGroups =
-    leadPost && isPopulatedProductGroup(leadPost.productGroups)
-      ? leadPost.productGroups.slice(0, 2)
-      : productGroups.slice(0, 2)
-  const heroHighlights =
-    leadProductGroups.length > 0
-      ? leadProductGroups.map(
-          (group) =>
-            `${group.title} ${locale === 'de' ? 'mit' : 'with'} ${group.products.length} ${
-              locale === 'de' ? 'Eintraegen' : 'items'
-            }`,
-        )
-      : defaultHighlights[locale]
+  const { footerLinks, navItems, posts } = await getHomeData(locale)
+  const featuredPosts = posts.filter(isFeaturedPost).slice(0, 3)
+  const leadPost = featuredPosts[0] ?? posts[0]
+  const supportingPosts = posts.filter((post) => post.id !== leadPost?.id).slice(0, 3)
+  const latestPostsBase = posts.filter((post) => !featuredPosts.some((featured) => featured.id === post.id))
+  const latestPosts = (latestPostsBase.length > 0 ? latestPostsBase : posts).slice(0, 5)
 
   return (
     <div className="site-shell">
@@ -355,62 +239,13 @@ export default async function LocalizedHomePage({
             <p className="hero__lead">{localizedCopy.heroLead}</p>
 
             <div className="hero__actions">
-              <a className="button button--primary" href={`/${locale}#leistungen`}>
+              <a className="button button--primary" href={leadPost ? `/${locale}/${leadPost.url}` : `/${locale}/blog`}>
                 {localizedCopy.heroCtaPrimary}
               </a>
-              <a className="button button--secondary" href={`/${locale}#wissen`}>
+              <a className="button button--secondary" href={`/${locale}/blog`}>
                 {localizedCopy.heroCtaSecondary}
               </a>
             </div>
-
-            <ul className="hero__highlights">
-              {heroHighlights.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-
-          <aside className="hero__panel">
-            <p className="eyebrow">Systemstatus</p>
-            <div className="metric-grid">
-              <div className="metric-card">
-                <span>{localizedCopy.systemLabels.blogposts}</span>
-                <strong>{posts.length || 0}</strong>
-              </div>
-              <div className="metric-card">
-                <span>{localizedCopy.productsMetric}</span>
-                <strong>{productGroups.length || 0}</strong>
-              </div>
-              <div className="metric-card">
-                <span>{localizedCopy.systemLabels.nav}</span>
-                <strong>{navItems.length}</strong>
-              </div>
-              <div className="metric-card">
-                <span>{localizedCopy.systemLabels.language}</span>
-                <strong>DE / EN</strong>
-              </div>
-            </div>
-
-            <div className="hero__note">
-              <p className="eyebrow">{localizedCopy.positionLabel}</p>
-              <p>{localizedCopy.positionBody}</p>
-            </div>
-          </aside>
-        </section>
-
-        <section className="section services" id="leistungen">
-          <div className="section-heading">
-            <p className="eyebrow">{localizedCopy.servicesLabel}</p>
-            <h2>{localizedCopy.servicesHeading}</h2>
-          </div>
-
-          <div className="services__grid">
-            {localizedCopy.serviceCards.map((card) => (
-              <article className="service-card" key={card.title}>
-                <h3>{card.title}</h3>
-                <p>{card.body}</p>
-              </article>
-            ))}
           </div>
         </section>
 
@@ -428,23 +263,13 @@ export default async function LocalizedHomePage({
               </div>
               <div className="lead-story__body">
                 <p className="story-meta">
-                  {leadPost ? formatDate(leadPost.publishedAt, locale) : localizedCopy.current} /{' '}
+                  {leadPost ? formatBlogDate(leadPost.publishedAt, locale) : localizedCopy.current} /{' '}
                   {leadPost
                     ? estimateReadingTime(getPostTextContent(leadPost), locale)
-                    : estimateReadingTime('fallback content', locale)}
+                      : estimateReadingTime('fallback content', locale)}
                 </p>
                 <h3>{leadPost?.title || localizedCopy.publishedFallbackTitle}</h3>
-                <p>{leadPost ? buildSummary(leadPost) : localizedCopy.publishedFallback}</p>
-
-                {leadProductGroups.length > 0 ? (
-                  <div className="tag-row">
-                    {leadProductGroups.map((group) => (
-                      <span className="tag-pill" key={group.id}>
-                        {group.title}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
+                <p>{leadPost ? buildPostSummary(leadPost) : localizedCopy.publishedFallback}</p>
 
                 {leadPost ? (
                   <Link className="button button--secondary" href={`/${locale}/${leadPost.url}`}>
@@ -457,14 +282,14 @@ export default async function LocalizedHomePage({
             <div className="story-stack">
               {supportingPosts.length > 0
                 ? supportingPosts.map((post) => (
-                    <article className="story-card" key={post.id}>
+                    <Link className="story-card story-card--link" href={`/${locale}/${post.url}`} key={post.id}>
                       <p className="story-meta">
-                        {formatDate(post.publishedAt, locale)} /{' '}
+                        {formatBlogDate(post.publishedAt, locale)} /{' '}
                         {estimateReadingTime(getPostTextContent(post), locale)}
                       </p>
                       <h3>{post.title}</h3>
-                      <p>{buildSummary(post)}</p>
-                    </article>
+                      <p>{buildPostSummary(post)}</p>
+                    </Link>
                   ))
                 : localizedCopy.storyFallback.map((item) => (
                     <article className="story-card" key={item.title}>
@@ -477,43 +302,6 @@ export default async function LocalizedHomePage({
           </div>
         </section>
 
-        <section className="section product-groups" id="produkte">
-          <div className="section-heading">
-            <p className="eyebrow">{localizedCopy.offerLabel}</p>
-            <h2>{localizedCopy.offerHeading}</h2>
-          </div>
-
-          <div className="product-groups__grid">
-            {productGroups.length > 0 ? (
-              productGroups.map((group) => (
-                <article className="product-card" key={group.id}>
-                  <div>
-                    <p className="story-meta">
-                      {group.products.length} {locale === 'de' ? 'Produkte' : 'products'}
-                    </p>
-                    <h3>{group.title}</h3>
-                  </div>
-                  <ul>
-                    {group.products.slice(0, 4).map((product) => (
-                      <li key={`${group.id}-${product.id ?? product.productName}`}>
-                        {product.productName}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))
-            ) : (
-              <article className="product-card product-card--empty">
-                <div>
-                  <p className="story-meta">{locale === 'de' ? 'Noch keine Daten' : 'No data yet'}</p>
-                  <h3>{localizedCopy.productsEmpty}</h3>
-                </div>
-                <p>{localizedCopy.productsEmptyBody}</p>
-              </article>
-            )}
-          </div>
-        </section>
-
         <section className="section latest-posts">
           <div className="section-heading">
             <p className="eyebrow">{localizedCopy.latestLabel}</p>
@@ -521,13 +309,50 @@ export default async function LocalizedHomePage({
           </div>
 
           <div className="latest-posts__layout">
+            <aside className="featured-column">
+              <div className="featured-column__header">
+                <p className="eyebrow">{localizedCopy.featuredColumnLabel}</p>
+                <h3>{localizedCopy.featuredHeading}</h3>
+              </div>
+
+              <div className="featured-column__list">
+                {featuredPosts.length > 0 ? (
+                  featuredPosts.map((post) => (
+                    <Link className="featured-post" href={`/${locale}/${post.url}`} key={post.id}>
+                      <p className="story-meta">
+                        {formatBlogDate(post.publishedAt, locale)} / {estimateReadingTime(getPostTextContent(post), locale)}
+                      </p>
+                      <h4>{post.title}</h4>
+                      <p>{buildPostSummary(post)}</p>
+                    </Link>
+                  ))
+                ) : null}
+              </div>
+            </aside>
+
             <div className="latest-posts__list">
               {latestPosts.length > 0 ? (
                 latestPosts.map((post) => (
                   <Link className="latest-post latest-post--link" href={`/${locale}/${post.url}`} key={post.id}>
-                    <p className="story-meta">{formatDate(post.publishedAt, locale)}</p>
+                    <p className="story-meta">{formatBlogDate(post.publishedAt, locale)}</p>
                     <h3>{post.title}</h3>
-                    <p>{buildSummary(post)}</p>
+                    <p>{buildPostSummary(post)}</p>
+                    <div className="blog-card__taxonomy">
+                      {isPopulatedCategory(post.categories)
+                        ? (post.categories as PopulatedCategory[]).slice(0, 2).map((category) => (
+                            <span className="tag-pill" key={`cat-${category.id}`}>
+                              {category.title}
+                            </span>
+                          ))
+                        : null}
+                      {isPopulatedTag(post.tags)
+                        ? (post.tags as PopulatedTag[]).slice(0, 2).map((tag) => (
+                            <span className="tag-pill tag-pill--neutral" key={`tag-${tag.id}`}>
+                              #{tag.title}
+                            </span>
+                          ))
+                        : null}
+                    </div>
                   </Link>
                 ))
               ) : (
@@ -537,16 +362,15 @@ export default async function LocalizedHomePage({
                   <p>{localizedCopy.latestFallbackBody}</p>
                 </article>
               )}
+              <aside className="contact-panel" id="kontakt">
+                <p className="eyebrow">{locale === 'de' ? 'Kontakt' : 'Contact'}</p>
+                <h3>{localizedCopy.contactTitle}</h3>
+                <p>{localizedCopy.contactBody}</p>
+                <a className="button button--primary" href="mailto:hallo@spacepc.de">
+                  hallo@spacepc.de
+                </a>
+              </aside>
             </div>
-
-            <aside className="contact-panel" id="kontakt">
-              <p className="eyebrow">{locale === 'de' ? 'Kontakt' : 'Contact'}</p>
-              <h3>{localizedCopy.contactTitle}</h3>
-              <p>{localizedCopy.contactBody}</p>
-              <a className="button button--primary" href="mailto:hallo@spacepc.de">
-                hallo@spacepc.de
-              </a>
-            </aside>
           </div>
         </section>
       </main>

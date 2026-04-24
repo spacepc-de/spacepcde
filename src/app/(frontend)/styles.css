@@ -161,18 +161,12 @@ main {
 }
 
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.8fr);
-  gap: 1.5rem;
   padding: 4rem 0 1.5rem;
 }
 
 .hero__content,
-.hero__panel,
-.service-card,
 .lead-story,
 .story-card,
-.product-card,
 .latest-post,
 .contact-panel {
   border: 1px solid var(--line);
@@ -253,68 +247,8 @@ main {
   margin-top: 2rem;
 }
 
-.hero__highlights {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.9rem;
-  padding: 0;
-  margin: 2rem 0 0;
-  list-style: none;
-}
-
-.hero__highlights li {
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--line);
-  color: var(--ink-soft);
-}
-
-.hero__panel {
-  padding: 1.4rem;
-  background:
-    linear-gradient(180deg, rgba(20, 32, 46, 0.97), rgba(17, 25, 37, 0.96)),
-    var(--bg-soft);
-  color: var(--ink);
-}
-
-.hero__panel .eyebrow,
-.hero__panel p,
-.metric-card span {
-  color: rgba(245, 247, 251, 0.72);
-}
-
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
-}
-
-.metric-card {
-  padding: 1rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-}
-
-.metric-card span {
-  display: block;
-  margin-bottom: 0.4rem;
-  font-size: 0.8rem;
-}
-
-.metric-card strong {
-  font-size: 1.5rem;
-  letter-spacing: -0.04em;
-}
-
-.hero__note {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 .services,
 .feature-story,
-.product-groups,
 .latest-posts {
   padding: 1.5rem 0 0;
 }
@@ -331,19 +265,7 @@ main {
   font-size: clamp(2rem, 3vw, 3.4rem);
 }
 
-.services__grid,
-.product-groups__grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.service-card {
-  padding: 1.5rem;
-}
-
 .service-card h3,
-.product-card h3,
 .story-card h3,
 .latest-post h3,
 .contact-panel h3 {
@@ -355,6 +277,11 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
   gap: 1rem;
+}
+
+.latest-posts__layout {
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  align-items: start;
 }
 
 .lead-story {
@@ -391,10 +318,15 @@ main {
 
 .lead-story__body,
 .story-card,
-.product-card,
 .latest-post,
-.contact-panel {
+.contact-panel,
+.featured-post,
+.featured-column__header {
   padding: 1.5rem;
+}
+
+.story-card--link {
+  text-decoration: none;
 }
 
 .lead-story__body h3 {
@@ -417,6 +349,23 @@ main {
   color: var(--sky);
   font-size: 0.88rem;
   font-weight: 600;
+  text-decoration: none;
+}
+
+.tag-pill--neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink-soft);
+}
+
+.blog-card__taxonomy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.blog-card__taxonomy--spacious {
+  margin: 0 0 1.4rem;
 }
 
 .story-stack,
@@ -425,23 +374,57 @@ main {
   gap: 1rem;
 }
 
-.product-card ul {
-  padding-left: 1rem;
-  margin: 1rem 0 0;
+.featured-column {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  position: sticky;
+  top: 5.5rem;
 }
 
-.product-card li + li {
-  margin-top: 0.45rem;
+.featured-column__header,
+.featured-post {
+  border: 1px solid var(--line);
+  border-radius: 1.4rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
-.product-card--empty {
-  grid-column: 1 / -1;
+.featured-column__header h3,
+.featured-post h4 {
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.featured-column__header h3 {
+  font-size: clamp(1.5rem, 2vw, 2rem);
+}
+
+.featured-column__header p,
+.featured-post p {
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.featured-column__list {
+  display: grid;
+  gap: 1rem;
+}
+
+.featured-post {
+  display: block;
+  text-decoration: none;
+}
+
+.featured-post h4 {
+  font-size: 1.2rem;
+}
+
+.featured-post--empty {
+  min-height: 10rem;
 }
 
 .contact-panel {
-  position: sticky;
-  top: 5.5rem;
-  align-self: start;
   background:
     linear-gradient(180deg, rgba(20, 28, 43, 0.98), rgba(14, 21, 33, 0.96)),
     var(--surface-strong);
@@ -486,6 +469,19 @@ main {
 
 .content-page__meta {
   margin-top: 1rem;
+}
+
+.content-page__lead,
+.content-page__author {
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.content-page__post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
 }
 
 .content-page__card {
@@ -537,26 +533,94 @@ main {
   padding-left: 1.2rem;
 }
 
+.content-page__actions {
+  margin-top: 2rem;
+}
+
 .latest-post--link {
   text-decoration: none;
 }
+
+.blog-index {
+  padding-bottom: 2rem;
+}
+
+.blog-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+}
+
+.blog-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.blog-list-card,
+.blog-sidebar__section {
+  border: 1px solid var(--line);
+  border-radius: 1.4rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.blog-list-card {
+  padding: 1.5rem;
+}
+
+.blog-list-card h2 {
+  margin: 0 0 0.8rem;
+  font-size: clamp(1.6rem, 2vw, 2.2rem);
+  letter-spacing: -0.03em;
+}
+
+.blog-list-card h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.blog-list-card p {
+  color: var(--ink-soft);
+  line-height: 1.75;
+}
+
+.blog-sidebar {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.blog-sidebar__section {
+  padding: 1.3rem;
+}
+
+.blog-sidebar__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+@media (max-width: 1080px) {
+  .blog-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 @media (max-width: 1080px) {
   .hero,
   .feature-story__layout,
   .latest-posts__layout,
   .section-heading,
-  .services__grid,
-  .product-groups__grid,
   .site-footer__content {
     grid-template-columns: 1fr;
   }
 
-  .hero__highlights {
-    grid-template-columns: 1fr;
+  .contact-panel {
+    position: static;
   }
 
-  .contact-panel {
+  .featured-column {
     position: static;
   }
 }
@@ -582,17 +646,10 @@ main {
   }
 
   .hero__content,
-  .hero__panel,
-  .service-card,
   .lead-story__body,
   .story-card,
-  .product-card,
   .latest-post,
   .contact-panel {
     padding: 1.2rem;
-  }
-
-  .metric-grid {
-    grid-template-columns: 1fr;
   }
 }

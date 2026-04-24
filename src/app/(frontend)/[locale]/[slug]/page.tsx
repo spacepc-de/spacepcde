@@ -4,6 +4,14 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import {
+  formatBlogDate,
+  getCategoryHref,
+  getFeaturedImage,
+  getTagHref,
+  isPopulatedCategory,
+  isPopulatedTag,
+} from '@/lib/blog-frontend'
 import { getPayloadConfig } from '@/payload.config'
 import {
   getFallbackFooterLinks,
@@ -26,6 +34,14 @@ type FrontendPage = {
 }
 
 type FrontendBlogPost = {
+  author?:
+    | {
+        name: string
+        url: string
+      }
+    | number
+    | null
+  categories?: Array<{ id: number; title: string; url: string } | number> | null
   contentMarkdown?: string | null
   excerpt?: string | null
   featuredImage?:
@@ -38,6 +54,7 @@ type FrontendBlogPost = {
   publishedAt?: string | null
   seoDescription?: string | null
   seoTitle?: string | null
+  tags?: Array<{ id: number; title: string; url: string } | number> | null
   title: string
   url: string
 }
@@ -115,33 +132,6 @@ function renderMarkdown(markdown: string) {
   return elements
 }
 
-function formatDate(value: string | null | undefined, locale: LocaleCode) {
-  if (!value) {
-    return locale === 'de' ? 'Aktuell' : 'Current'
-  }
-
-  return new Intl.DateTimeFormat(locale === 'de' ? 'de-DE' : 'en-US', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(value))
-}
-
-function getFeaturedImage(post: FrontendBlogPost) {
-  if (!post.featuredImage || typeof post.featuredImage === 'number') {
-    return null
-  }
-
-  if (!post.featuredImage.url) {
-    return null
-  }
-
-  return {
-    alt: post.featuredImage.alt || post.title,
-    url: post.featuredImage.url,
-  }
-}
-
 async function getEntryBySlug(locale: LocaleCode, slug: string) {
   const payload = await getPayload({ config: await getPayloadConfig() })
   const [pageResult, blogPostResult, navigationResult, footerResult] = await Promise.all([
@@ -191,10 +181,12 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
 
   return {
     footerLinks: mapLinks(
+      locale,
       footerResult.docs as Array<{ href: string; label: string; openInNewTab?: boolean | null }>,
       getFallbackFooterLinks(locale),
     ),
     navItems: mapLinks(
+      locale,
       navigationResult.docs as Array<{ href: string; label: string; openInNewTab?: boolean | null }>,
       getFallbackNavItems(locale),
     ),
@@ -313,9 +305,16 @@ export default async function LocalizedStaticPage({
                   ? 'Seite'
                   : 'Page'}
           </p>
-          <h1>{entry.title}</h1>
+            <h1>{entry.title}</h1>
           {entry.kind === 'post' ? (
-            <p className="story-meta content-page__meta">{formatDate(entry.publishedAt, locale)}</p>
+            <div className="content-page__post-meta">
+              <p className="story-meta content-page__meta">{formatBlogDate(entry.publishedAt, locale)}</p>
+              {entry.author && typeof entry.author !== 'number' ? (
+                <p className="content-page__author">
+                  {locale === 'de' ? 'Von' : 'By'} {entry.author.name}
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </section>
 
@@ -332,11 +331,36 @@ export default async function LocalizedStaticPage({
               </div>
             ) : null}
             <div className="content-page__body">
+              {entry.kind === 'post' && (isPopulatedCategory(entry.categories) || isPopulatedTag(entry.tags)) ? (
+                <div className="blog-card__taxonomy blog-card__taxonomy--spacious">
+                  {isPopulatedCategory(entry.categories)
+                    ? entry.categories.map((category) => (
+                        <Link className="tag-pill" href={getCategoryHref(locale, category.url)} key={`cat-${category.id}`}>
+                          {category.title}
+                        </Link>
+                      ))
+                    : null}
+                  {isPopulatedTag(entry.tags)
+                    ? entry.tags.map((tag) => (
+                        <Link className="tag-pill tag-pill--neutral" href={getTagHref(locale, tag.url)} key={`tag-${tag.id}`}>
+                          #{tag.title}
+                        </Link>
+                      ))
+                    : null}
+                </div>
+              ) : null}
               {entry.contentMarkdown?.trim() ? (
                 renderMarkdown(entry.contentMarkdown)
               ) : (
                 <p>{locale === 'de' ? 'Diese Seite enthaelt noch keinen Inhalt.' : 'This page has no content yet.'}</p>
               )}
+              {entry.kind === 'post' ? (
+                <div className="content-page__actions">
+                  <Link className="button button--secondary" href={`/${locale}/blog`}>
+                    {locale === 'de' ? 'Zur Blog-Uebersicht' : 'Back to blog'}
+                  </Link>
+                </div>
+              ) : null}
             </div>
           </article>
         </section>
