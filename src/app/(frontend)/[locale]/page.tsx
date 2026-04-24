@@ -13,7 +13,7 @@ import {
   mapLinks,
   type LocaleCode,
 } from '@/lib/frontend'
-import config from '@/payload.config'
+import { getPayloadConfig } from '@/payload.config'
 import '../styles.css'
 
 export const dynamic = 'force-dynamic'
@@ -223,7 +223,7 @@ function isPopulatedProductGroup(value: BlogPost['productGroups']): value is Pro
 }
 
 async function getHomeData(locale: LocaleCode) {
-  const payload = await getPayload({ config: await config })
+  const payload = await getPayload({ config: await getPayloadConfig() })
   const [navigationResult, footerResult, postsResult, productGroupsResult] = await Promise.all([
     payload.find({
       collection: 'navigation-links',
@@ -255,7 +255,7 @@ async function getHomeData(locale: LocaleCode) {
       fallbackLocale: 'de',
       limit: 4,
       locale,
-      sort: 'title',
+      sort: '-createdAt',
     }),
   ])
 

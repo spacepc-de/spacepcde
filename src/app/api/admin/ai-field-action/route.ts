@@ -2,7 +2,7 @@ import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
 import { syncBlogContent } from '@/lib/blogContent'
-import config from '@/payload.config'
+import { getPayloadConfig } from '@/payload.config'
 
 type Action = 'generateSeo' | 'rewriteMarkdown'
 
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OPENAI_API_KEY ist nicht gesetzt.' }, { status: 500 })
     }
 
-    const payloadConfig = await config
+    const payloadConfig = await getPayloadConfig()
     const payload = await getPayload({ config: payloadConfig })
     const { user } = await payload.auth({ headers: request.headers })
 

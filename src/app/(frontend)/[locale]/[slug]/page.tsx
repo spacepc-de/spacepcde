@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import config from '@/payload.config'
+import { getPayloadConfig } from '@/payload.config'
 import {
   getFallbackFooterLinks,
   getFallbackNavItems,
@@ -95,7 +95,7 @@ function renderMarkdown(markdown: string) {
 }
 
 async function getPageBySlug(locale: LocaleCode, slug: string) {
-  const payload = await getPayload({ config: await config })
+  const payload = await getPayload({ config: await getPayloadConfig() })
   const [pageResult, navigationResult, footerResult] = await Promise.all([
     payload.find({
       collection: 'pages' as never,
@@ -103,7 +103,7 @@ async function getPageBySlug(locale: LocaleCode, slug: string) {
       fallbackLocale: 'de',
       limit: 1,
       locale,
-      sort: 'title',
+      sort: '-createdAt',
       where: {
         url: {
           equals: slug,

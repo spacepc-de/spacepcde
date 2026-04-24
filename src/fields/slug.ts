@@ -26,20 +26,24 @@ const buildSlugHook =
     return value
   }
 
-export const slugField = (fallbackField = 'title'): TextField =>
-  withTranslationButton(
-    {
-      name: 'url',
-      type: 'text',
-      required: true,
-      localized: true,
-      admin: {
-        description: 'URL-Slug fuer Frontend-Routen, z. B. mein-artikel',
-        position: 'sidebar',
-      },
-      hooks: {
-        beforeValidate: [buildSlugHook(fallbackField)],
-      },
+type SlugFieldOptions = {
+  localized?: boolean
+}
+
+export const slugField = (fallbackField = 'title', options: SlugFieldOptions = {}): TextField => {
+  const field: TextField = {
+    name: 'url',
+    type: 'text',
+    required: true,
+    localized: options.localized ?? true,
+    admin: {
+      description: 'URL-Slug fuer Frontend-Routen, z. B. mein-artikel',
+      position: 'sidebar',
     },
-    'slug',
-  )
+    hooks: {
+      beforeValidate: [buildSlugHook(fallbackField)],
+    },
+  }
+
+  return field.localized ? withTranslationButton(field, 'slug') : field
+}

@@ -1,5 +1,5 @@
 import { getPayload, Payload } from 'payload'
-import config from '@/payload.config'
+import { getPayloadConfig } from '@/payload.config'
 
 import { describe, it, beforeAll, expect } from 'vitest'
 
@@ -7,7 +7,7 @@ let payload: Payload
 
 describe('API', () => {
   beforeAll(async () => {
-    const payloadConfig = await config
+    const payloadConfig = await getPayloadConfig()
     payload = await getPayload({ config: payloadConfig })
   })
 

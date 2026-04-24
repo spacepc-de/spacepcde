@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
-import config from '@/payload.config'
+import { getPayloadConfig } from '@/payload.config'
 
 type RedirectDoc = {
   fromPath: string
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'pathname fehlt.' }, { status: 400 })
     }
 
-    const payload = await getPayload({ config: await config })
+    const payload = await getPayload({ config: await getPayloadConfig() })
     const result = await payload.find({
       collection: 'redirects' as never,
       depth: 0,

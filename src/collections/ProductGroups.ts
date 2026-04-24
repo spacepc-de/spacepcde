@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
 import { slugField } from '../fields/slug'
-import { withTranslationButton } from '../fields/translationButton'
 
 export const ProductGroups: CollectionConfig = {
   slug: 'product-groups',
@@ -14,13 +13,12 @@ export const ProductGroups: CollectionConfig = {
     defaultColumns: ['title', 'updatedAt'],
   },
   fields: [
-    withTranslationButton({
+    {
       name: 'title',
       type: 'text',
       required: true,
-      localized: true,
-    }),
-    slugField(),
+    },
+    slugField('title', { localized: false }),
     {
       name: 'products',
       type: 'array',
@@ -31,20 +29,18 @@ export const ProductGroups: CollectionConfig = {
         plural: 'Produkte',
       },
       fields: [
-        withTranslationButton({
+        {
           name: 'productName',
           type: 'text',
           required: true,
-          localized: true,
           label: 'Produktname',
-        }),
-        withTranslationButton({
+        },
+        {
           name: 'link',
           type: 'text',
           required: true,
-          localized: true,
           label: 'Link',
-        }),
+        },
       ],
     },
   ],
