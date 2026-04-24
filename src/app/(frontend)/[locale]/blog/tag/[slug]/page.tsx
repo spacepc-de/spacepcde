@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { FrontendHeader } from '@/components/frontend/FrontendHeader'
-import { getLocalizedAlternates, isLocaleCode } from '@/lib/frontend'
+import { getExactLocalizedAlternates, isLocaleCode } from '@/lib/frontend'
 import {
   buildPostSummary,
   estimateReadingTime,
@@ -91,8 +91,19 @@ export async function generateMetadata({
     return {}
   }
 
+  const { localeSwitchHref, tag } = await getTagPageData(locale, slug)
+
+  if (!tag) {
+    return {}
+  }
+
+  const currentPath = `/${locale}/blog/tag/${tag.url}`
+
   return {
-    alternates: getLocalizedAlternates(`blog/tag/${slug}`),
+    alternates: getExactLocalizedAlternates(locale, {
+      de: locale === 'de' ? currentPath : localeSwitchHref,
+      en: locale === 'en' ? currentPath : localeSwitchHref,
+    }),
     title: `Tag: ${slug} | spacepc.de`,
   }
 }

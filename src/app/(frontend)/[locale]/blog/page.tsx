@@ -80,7 +80,7 @@ export async function generateMetadata({
   }
 
   return {
-    alternates: getLocalizedAlternates('blog'),
+    alternates: getLocalizedAlternates(locale, 'blog'),
     description:
       locale === 'de'
         ? 'Blog-Archiv mit technischen Artikeln, Kategorien und Tags auf spacepc.de.'

@@ -9,6 +9,52 @@ type ResolveResponse = {
 }
 
 const SKIP_PREFIXES = ['/api', '/admin', '/_next', '/favicon', '/robots.txt', '/sitemap.xml']
+const LOCALE_COOKIE = 'site-locale'
+const LOCALE_HEADER = 'x-site-locale'
+
+function getLocaleFromPathname(pathname: string) {
+  if (pathname === '/de' || pathname.startsWith('/de/')) {
+    return 'de'
+  }
+
+  if (pathname === '/en' || pathname.startsWith('/en/')) {
+    return 'en'
+  }
+
+  return null
+}
+
+function withLocaleCookie(response: NextResponse, pathname: string) {
+  const locale = getLocaleFromPathname(pathname)
+
+  if (locale) {
+    response.cookies.set(LOCALE_COOKIE, locale, {
+      maxAge: 60 * 60 * 24 * 365,
+      path: '/',
+      sameSite: 'lax',
+    })
+  }
+
+  return response
+}
+
+function createNextResponseWithLocale(request: NextRequest, pathname: string) {
+  const requestHeaders = new Headers(request.headers)
+  const locale = getLocaleFromPathname(pathname)
+
+  if (locale) {
+    requestHeaders.set(LOCALE_HEADER, locale)
+  }
+
+  return withLocaleCookie(
+    NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    }),
+    pathname,
+  )
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
@@ -19,7 +65,7 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === '/') {
     const destination = new URL('/de', request.url)
-    return NextResponse.redirect(destination, 301)
+    return withLocaleCookie(NextResponse.redirect(destination, 301), destination.pathname)
   }
 
   const resolveURL = new URL('/api/redirects/resolve', request.url)
@@ -40,18 +86,21 @@ export async function middleware(request: NextRequest) {
     const redirect = data.redirect
 
     if (!redirect?.toPath) {
-      return NextResponse.next()
+      return createNextResponseWithLocale(request, pathname)
     }
 
     const destination = new URL(redirect.toPath, request.url)
 
     if (destination.pathname === pathname && destination.search === search) {
-      return NextResponse.next()
+      return createNextResponseWithLocale(request, pathname)
     }
 
-    return NextResponse.redirect(destination, redirect.statusCode === 302 ? 302 : 301)
+    return withLocaleCookie(
+      NextResponse.redirect(destination, redirect.statusCode === 302 ? 302 : 301),
+      destination.pathname,
+    )
   } catch {
-    return NextResponse.next()
+    return createNextResponseWithLocale(request, pathname)
   }
 }
 

@@ -111,14 +111,35 @@ export function mapLinks(
     .map((item) => mapLinkItem(locale, item))
 }
 
-export function getLocalizedAlternates(pathWithoutLocale = '') {
+export function getLocalizedAlternates(locale: LocaleCode, pathWithoutLocale = '') {
   const normalizedPath = pathWithoutLocale ? `/${pathWithoutLocale.replace(/^\/+/, '')}` : ''
+  const currentPath = `/${locale}${normalizedPath}`
 
   return {
-    canonical: `/de${normalizedPath}`,
+    canonical: currentPath,
     languages: {
       de: `/de${normalizedPath}`,
       en: `/en${normalizedPath}`,
+      'x-default': '/de',
+    },
+  }
+}
+
+export function getExactLocalizedAlternates(
+  locale: LocaleCode,
+  paths: {
+    de?: string
+    en?: string
+  },
+) {
+  const dePath = paths.de || '/de'
+  const enPath = paths.en || '/en'
+
+  return {
+    canonical: locale === 'de' ? dePath : enPath,
+    languages: {
+      de: dePath,
+      en: enPath,
       'x-default': '/de',
     },
   }

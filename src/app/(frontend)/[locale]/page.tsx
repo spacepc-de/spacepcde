@@ -42,12 +42,12 @@ const copy = {
       'Technische Inhalte, Infrastruktur-Themen und praktische Anleitungen auf einer gemeinsamen Payload-Basis.',
     featuredColumnLabel: 'Featured',
     featuredHeading: 'Ausgewählte Beiträge',
-    headline: 'Technische Inhalte zu Infrastruktur, Hosting, Open Source und digitalen Systemen.',
+    headline: 'Technik verstehen. Systeme verbessern. Probleme lösen.',
     heroCtaPrimary: 'Zum Blog',
     heroCtaSecondary: 'IT Service',
     heroEyebrow: 'spacepc.de',
     heroLead:
-      'Praxisnahe Artikel, Einordnungen und Anleitungen aus dem echten Betrieb von Systemen, Self-Hosting-Setups und technischer Infrastruktur.',
+      'Anleitungen, Projekte und Lösungen rund um Linux, HomeLab, DevOps, Monitoring, Hardware und smarte Infrastruktur.',
     latestFallbackBody:
       'Sobald weitere Blogbeiträge vorliegen, füllt sich dieser Bereich automatisch.',
     latestFallbackTitle: 'Nach dem ersten publizierten Beitrag füllt sich diese Liste automatisch.',
@@ -87,12 +87,12 @@ const copy = {
       'Technical writing, infrastructure topics, and practical guides on one shared Payload base.',
     featuredColumnLabel: 'Featured',
     featuredHeading: 'Selected posts',
-    headline: 'Technical writing on infrastructure, hosting, open source, and digital systems.',
+    headline: 'Understand technology. Improve systems. Solve problems.',
     heroCtaPrimary: 'Go to blog',
     heroCtaSecondary: 'IT services',
     heroEyebrow: 'spacepc.de',
     heroLead:
-      'Practical articles, guides, and technical analysis drawn from real-world systems, self-hosting setups, and infrastructure work.',
+      'Guides, projects, and solutions around Linux, homelab, DevOps, monitoring, hardware, and smart infrastructure.',
     latestFallbackBody:
       'As soon as more posts are published, this area fills automatically.',
     latestFallbackTitle: 'After the first published post, this list fills automatically.',
@@ -173,7 +173,7 @@ export async function generateMetadata({
   }
 
   return {
-    alternates: getLocalizedAlternates(),
+    alternates: getLocalizedAlternates(locale),
     description:
       locale === 'de'
         ? 'IT Service, technische Inhalte und Produktbezug auf einer schnellen, klar strukturierten SpacePC-Website.'

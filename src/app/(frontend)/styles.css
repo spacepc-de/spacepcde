@@ -544,7 +544,7 @@ main {
 }
 
 .featured-column__header h3 {
-  font-size: clamp(1.5rem, 2vw, 2rem);
+  font-size: clamp(2rem, 3vw, 3.4rem);
 }
 
 .latest-posts__header {

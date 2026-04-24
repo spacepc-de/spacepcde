@@ -1,10 +1,11 @@
 import React from 'react'
 import type { Metadata } from 'next'
 import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
+import { notFound } from 'next/navigation'
 
 import { SITE_URL, isLocaleCode } from '@/lib/frontend'
 
-import './styles.css'
+import '../styles.css'
 
 const ibmPlexSans = IBM_Plex_Sans({
   display: 'swap',
@@ -27,16 +28,19 @@ export const metadata: Metadata = {
   title: 'spacepc.de | Systeme, Support und technische Inhalte',
 }
 
-export default async function RootLayout(props: {
+export default async function LocaleRootLayout(props: {
   children: React.ReactNode
-  params: Promise<{ locale?: string }>
+  params: Promise<{ locale: string }>
 }) {
   const { children, params } = props
   const { locale } = await params
-  const lang = isLocaleCode(locale ?? '') ? locale : 'de'
+
+  if (!isLocaleCode(locale)) {
+    notFound()
+  }
 
   return (
-    <html lang={lang}>
+    <html lang={locale}>
       <body className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
         <main>{children}</main>
       </body>

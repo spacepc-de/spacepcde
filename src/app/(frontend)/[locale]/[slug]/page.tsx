@@ -17,8 +17,8 @@ import {
 import { renderMarkdownToHtml } from '@/lib/markdown'
 import { getPayloadConfig } from '@/payload.config'
 import {
+  getExactLocalizedAlternates,
   getFallbackFooterLinks,
-  getLocalizedAlternates,
   isLocaleCode,
   mapLinks,
   type LocaleCode,
@@ -237,7 +237,7 @@ export async function generateMetadata({
     return {}
   }
 
-  const { entry } = await getEntryBySlug(locale, slug)
+  const { entry, localeSwitchHref } = await getEntryBySlug(locale, slug)
 
   if (!entry) {
     return {
@@ -246,7 +246,10 @@ export async function generateMetadata({
   }
 
   return {
-    alternates: getLocalizedAlternates(slug),
+    alternates: getExactLocalizedAlternates(locale, {
+      de: locale === 'de' ? `/${locale}/${entry.url}` : localeSwitchHref,
+      en: locale === 'en' ? `/${locale}/${entry.url}` : localeSwitchHref,
+    }),
     description:
       entry.seoDescription ||
       (locale === 'de' ? `${entry.title} auf spacepc.de` : `${entry.title} on spacepc.de`),

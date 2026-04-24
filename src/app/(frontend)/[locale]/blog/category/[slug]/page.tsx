@@ -14,7 +14,7 @@ import {
   isPopulatedCategory,
   isPopulatedTag,
 } from '@/lib/blog-frontend'
-import { getLocalizedAlternates, isLocaleCode } from '@/lib/frontend'
+import { getExactLocalizedAlternates, isLocaleCode } from '@/lib/frontend'
 import type { BlogPost, Category } from '@/payload-types'
 import { getPayloadConfig } from '@/payload.config'
 
@@ -93,8 +93,19 @@ export async function generateMetadata({
     return {}
   }
 
+  const { category, localeSwitchHref } = await getCategoryPageData(locale, slug)
+
+  if (!category) {
+    return {}
+  }
+
+  const currentPath = `/${locale}/blog/category/${category.url}`
+
   return {
-    alternates: getLocalizedAlternates(`blog/category/${slug}`),
+    alternates: getExactLocalizedAlternates(locale, {
+      de: locale === 'de' ? currentPath : localeSwitchHref,
+      en: locale === 'en' ? currentPath : localeSwitchHref,
+    }),
     title: `Category: ${slug} | spacepc.de`,
   }
 }
