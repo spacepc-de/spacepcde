@@ -196,7 +196,7 @@ export default async function LocalizedHomePage({
   const localizedCopy = copy[locale]
   const { footerLinks, posts } = await getHomeData(locale)
   const featuredPosts = posts.filter(isFeaturedPost).slice(0, 3)
-  const leadPost = featuredPosts[0] ?? posts[0]
+  const leadPost = posts[0]
   const supportingPosts = posts.filter((post) => post.id !== leadPost?.id).slice(0, 3)
   const latestPostsBase = posts.filter((post) => !featuredPosts.some((featured) => featured.id === post.id))
   const latestPosts = (latestPostsBase.length > 0 ? latestPostsBase : posts).slice(0, 5)
