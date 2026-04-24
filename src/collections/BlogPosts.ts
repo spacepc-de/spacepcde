@@ -79,10 +79,19 @@ export const BlogPosts: CollectionConfig = {
   admin: {
     group: 'Blog',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'status', 'author', 'publishedAt', 'updatedAt'],
+    defaultColumns: ['title', 'status', 'featured', 'author', 'publishedAt', 'updatedAt'],
   },
   defaultSort: '-publishedAt',
   fields: [
+    {
+      name: 'translationActions',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: './components/admin/TranslateAllButton#TranslateAllButton',
+        },
+      },
+    },
     withTranslationButton({
       name: 'title',
       type: 'text',
@@ -183,6 +192,15 @@ export const BlogPosts: CollectionConfig = {
         position: 'sidebar',
       },
       required: true,
+    },
+    {
+      name: 'featured',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+      },
+      label: 'Featured',
     },
     {
       name: 'author',

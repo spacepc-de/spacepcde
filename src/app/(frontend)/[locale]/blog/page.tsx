@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { FrontendHeader } from '@/components/frontend/FrontendHeader'
 import {
   buildPostSummary,
   estimateReadingTime,
@@ -13,23 +14,15 @@ import {
   isPopulatedCategory,
   isPopulatedTag,
 } from '@/lib/blog-frontend'
-import { getFallbackFooterLinks, getFallbackNavItems, getLocalizedAlternates, isLocaleCode, mapLinks } from '@/lib/frontend'
-import type { BlogPost, Category, FooterLink, NavigationLink, Tag } from '@/payload-types'
+import { getFallbackFooterLinks, getLocalizedAlternates, isLocaleCode, mapLinks } from '@/lib/frontend'
+import type { BlogPost, Category, FooterLink, Tag } from '@/payload-types'
 import { getPayloadConfig } from '@/payload.config'
 
 export const dynamic = 'force-dynamic'
 
 async function getBlogIndexData(locale: 'de' | 'en') {
   const payload = await getPayload({ config: await getPayloadConfig() })
-  const [navigationResult, footerResult, postsResult, categoriesResult, tagsResult] = await Promise.all([
-    payload.find({
-      collection: 'navigation-links',
-      depth: 0,
-      fallbackLocale: 'de',
-      limit: 20,
-      locale,
-      sort: 'order',
-    }),
+  const [footerResult, postsResult, categoriesResult, tagsResult] = await Promise.all([
     payload.find({
       collection: 'footer-links',
       depth: 0,
@@ -70,9 +63,6 @@ async function getBlogIndexData(locale: 'de' | 'en') {
     footerLinks: (footerResult.docs as FooterLink[]).length
       ? mapLinks(locale, footerResult.docs as FooterLink[], getFallbackFooterLinks(locale))
       : getFallbackFooterLinks(locale),
-    navItems: (navigationResult.docs as NavigationLink[]).length
-      ? mapLinks(locale, navigationResult.docs as NavigationLink[], getFallbackNavItems(locale))
-      : getFallbackNavItems(locale),
     posts: postsResult.docs as BlogPost[],
     tags: tagsResult.docs as Tag[],
   }
@@ -110,36 +100,14 @@ export default async function BlogIndexPage({
     notFound()
   }
 
-  const { categories, footerLinks, navItems, posts, tags } = await getBlogIndexData(locale)
+  const { categories, footerLinks, posts, tags } = await getBlogIndexData(locale)
 
   return (
     <div className="site-shell">
-      <header className="site-header">
-        <nav aria-label="Hauptnavigation" className="site-nav">
-          <Link className="brand" href={`/${locale}`}>
-            <span>spacepc</span>
-            <span className="brand__dot">.</span>
-            <span>de</span>
-          </Link>
-
-          <div className="site-nav__links">
-            {navItems.map((item) => (
-              <a
-                href={item.href}
-                key={`${item.label}-${item.href}`}
-                rel={item.openInNewTab ? 'noreferrer' : undefined}
-                target={item.openInNewTab ? '_blank' : undefined}
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
-
-          <Link className="site-nav__cta" href={`/${locale}#kontakt`}>
-            {locale === 'de' ? 'Anfrage senden' : 'Send request'}
-          </Link>
-        </nav>
-      </header>
+      <FrontendHeader
+        currentPath={`/${locale}/blog`}
+        locale={locale}
+      />
 
       <main className="content-page blog-index">
         <section className="section content-page__hero">

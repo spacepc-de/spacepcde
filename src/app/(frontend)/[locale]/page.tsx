@@ -4,7 +4,8 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import type { BlogPost, FooterLink, NavigationLink } from '@/payload-types'
+import type { BlogPost, FooterLink } from '@/payload-types'
+import { FrontendHeader } from '@/components/frontend/FrontendHeader'
 import {
   buildPostSummary,
   estimateReadingTime,
@@ -17,7 +18,6 @@ import {
 import type { PopulatedCategory, PopulatedTag } from '@/lib/blog-frontend'
 import {
   getFallbackFooterLinks,
-  getFallbackNavItems,
   getLocalizedAlternates,
   isLocaleCode,
   mapLinks,
@@ -27,6 +27,10 @@ import { getPayloadConfig } from '@/payload.config'
 import '../styles.css'
 
 export const dynamic = 'force-dynamic'
+
+type FrontendHomePost = BlogPost & {
+  featured?: boolean | null
+}
 
 const copy = {
   de: {
@@ -58,7 +62,7 @@ const copy = {
       'Sobald Blogbeitraege im Backend vorliegen, erscheint hier automatisch der Leitartikel.',
     publishedFallbackTitle:
       'Ein Leitartikel fuer die Startseite erscheint automatisch mit dem ersten Beitrag.',
-    request: 'Anfrage senden',
+    request: 'IT Service',
     storyFallback: [
       {
         body: 'Die Startseite priorisiert Inhalte und haelt die Wege kurz.',
@@ -103,7 +107,7 @@ const copy = {
       'As soon as blog posts exist in the backend, the lead story appears here automatically.',
     publishedFallbackTitle:
       'A lead article for the homepage appears automatically with the first post.',
-    request: 'Send request',
+    request: 'IT Service',
     storyFallback: [
       {
         body: 'The homepage prioritises content and keeps the paths short.',
@@ -121,25 +125,13 @@ const copy = {
   },
 } as const
 
-function isFeaturedPost(post: BlogPost) {
-  return isPopulatedCategory(post.categories)
-    ? (post.categories as PopulatedCategory[]).some(
-        (category) => category.url === 'featured' || category.title.toLowerCase() === 'featured',
-      )
-    : false
+function isFeaturedPost(post: FrontendHomePost) {
+  return Boolean(post.featured)
 }
 
 async function getHomeData(locale: LocaleCode) {
   const payload = await getPayload({ config: await getPayloadConfig() })
-  const [navigationResult, footerResult, postsResult] = await Promise.all([
-    payload.find({
-      collection: 'navigation-links',
-      depth: 0,
-      fallbackLocale: 'de',
-      limit: 20,
-      locale,
-      sort: 'order',
-    }),
+  const [footerResult, postsResult] = await Promise.all([
     payload.find({
       collection: 'footer-links',
       depth: 0,
@@ -165,8 +157,7 @@ async function getHomeData(locale: LocaleCode) {
 
   return {
     footerLinks: mapLinks(locale, footerResult.docs as FooterLink[], getFallbackFooterLinks(locale)),
-    navItems: mapLinks(locale, navigationResult.docs as NavigationLink[], getFallbackNavItems(locale)),
-    posts: postsResult.docs as BlogPost[],
+    posts: postsResult.docs as FrontendHomePost[],
   }
 }
 
@@ -203,7 +194,7 @@ export default async function LocalizedHomePage({
   }
 
   const localizedCopy = copy[locale]
-  const { footerLinks, navItems, posts } = await getHomeData(locale)
+  const { footerLinks, posts } = await getHomeData(locale)
   const featuredPosts = posts.filter(isFeaturedPost).slice(0, 3)
   const leadPost = featuredPosts[0] ?? posts[0]
   const supportingPosts = posts.filter((post) => post.id !== leadPost?.id).slice(0, 3)
@@ -212,32 +203,10 @@ export default async function LocalizedHomePage({
 
   return (
     <div className="site-shell">
-      <header className="site-header">
-        <nav aria-label="Hauptnavigation" className="site-nav">
-          <Link className="brand" href={`/${locale}`}>
-            <span>spacepc</span>
-            <span className="brand__dot">.</span>
-            <span>de</span>
-          </Link>
-
-          <div className="site-nav__links">
-            {navItems.map((item) => (
-              <a
-                href={item.href}
-                key={`${item.label}-${item.href}`}
-                rel={item.openInNewTab ? 'noreferrer' : undefined}
-                target={item.openInNewTab ? '_blank' : undefined}
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
-
-          <Link className="site-nav__cta" href={`/${locale}#kontakt`}>
-            {localizedCopy.request}
-          </Link>
-        </nav>
-      </header>
+      <FrontendHeader
+        currentPath={`/${locale}`}
+        locale={locale}
+      />
 
       <main id="start">
         <section className="hero section">

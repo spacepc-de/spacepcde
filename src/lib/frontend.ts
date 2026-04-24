@@ -1,6 +1,7 @@
 export type LocaleCode = 'de' | 'en'
 
 export type LinkItem = {
+  children?: LinkItem[]
   href: string
   label: string
   openInNewTab: boolean
@@ -76,20 +77,38 @@ function localizeInternalHref(locale: LocaleCode, href: string) {
   return `/${locale}/${href.replace(/^\/+/, '')}`
 }
 
+type LinkInput = {
+  children?: LinkInput[] | null
+  href: string
+  label: string
+  openInNewTab?: boolean | null
+}
+
+function mapLinkItem(locale: LocaleCode, item: LinkInput): LinkItem {
+  return {
+    children: Array.isArray(item.children)
+      ? item.children
+          .filter((child): child is LinkInput => Boolean(child?.label && child?.href))
+          .map((child) => mapLinkItem(locale, child))
+      : [],
+    href: localizeInternalHref(locale, item.href),
+    label: item.label,
+    openInNewTab: Boolean(item.openInNewTab),
+  }
+}
+
 export function mapLinks(
   locale: LocaleCode,
-  items: Array<{ href: string; label: string; openInNewTab?: boolean | null }>,
+  items: LinkInput[],
   fallback: LinkItem[],
 ): LinkItem[] {
   if (items.length === 0) {
     return fallback
   }
 
-  return items.map((item) => ({
-    href: localizeInternalHref(locale, item.href),
-    label: item.label,
-    openInNewTab: Boolean(item.openInNewTab),
-  }))
+  return items
+    .filter((item): item is LinkInput => Boolean(item?.label && item?.href))
+    .map((item) => mapLinkItem(locale, item))
 }
 
 export function getLocalizedAlternates(pathWithoutLocale = '') {
@@ -103,4 +122,24 @@ export function getLocalizedAlternates(pathWithoutLocale = '') {
       'x-default': '/de',
     },
   }
+}
+
+export function getLocaleSwitchHref(currentLocale: LocaleCode, targetLocale: LocaleCode, currentPath: string) {
+  if (!currentPath) {
+    return `/${targetLocale}`
+  }
+
+  if (currentPath === `/${currentLocale}`) {
+    return `/${targetLocale}`
+  }
+
+  if (currentPath.startsWith(`/${currentLocale}/`)) {
+    return `/${targetLocale}${currentPath.slice(currentLocale.length + 1)}`
+  }
+
+  if (currentPath === '/') {
+    return `/${targetLocale}`
+  }
+
+  return currentPath
 }

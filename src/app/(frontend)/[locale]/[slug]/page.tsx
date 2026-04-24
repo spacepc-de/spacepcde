@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { FrontendHeader } from '@/components/frontend/FrontendHeader'
 import { PostComments } from '@/components/frontend/PostComments'
 import {
   formatBlogDate,
@@ -13,10 +14,10 @@ import {
   isPopulatedCategory,
   isPopulatedTag,
 } from '@/lib/blog-frontend'
+import { renderMarkdownToHtml } from '@/lib/markdown'
 import { getPayloadConfig } from '@/payload.config'
 import {
   getFallbackFooterLinks,
-  getFallbackNavItems,
   getLocalizedAlternates,
   isLocaleCode,
   mapLinks,
@@ -25,8 +26,13 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+function getTargetLocale(locale: LocaleCode): LocaleCode {
+  return locale === 'de' ? 'en' : 'de'
+}
+
 type FrontendPage = {
   contentMarkdown?: string | null
+  id: number
   isLegalPage?: boolean | null
   seoDescription?: string | null
   seoTitle?: string | null
@@ -61,7 +67,6 @@ type FrontendBlogPost = {
       productName: string
     }>
     title: string
-    url: string
   } | number> | null
   seoDescription?: string | null
   seoTitle?: string | null
@@ -83,147 +88,9 @@ type FrontendComment = {
   parent?: number | { id: number } | null
 }
 
-function renderMarkdown(markdown: string) {
-  const lines = markdown.split('\n')
-  const elements: React.ReactNode[] = []
-  let paragraphBuffer: string[] = []
-  let listBuffer: string[] = []
-  let listType: 'ul' | 'ol' | null = null
-  let codeBuffer: string[] = []
-  let inCodeBlock = false
-  let blockquoteBuffer: string[] = []
-
-  const flushParagraph = () => {
-    if (paragraphBuffer.length === 0) return
-    elements.push(<p key={`p-${elements.length}`}>{paragraphBuffer.join(' ').trim()}</p>)
-    paragraphBuffer = []
-  }
-
-  const flushList = () => {
-    if (listBuffer.length === 0) return
-    const Tag = listType === 'ol' ? 'ol' : 'ul'
-    elements.push(
-      <Tag key={`${listType ?? 'ul'}-${elements.length}`}>
-        {listBuffer.map((item, index) => (
-          <li key={`li-${elements.length}-${index}`}>{item}</li>
-        ))}
-      </Tag>,
-    )
-    listBuffer = []
-    listType = null
-  }
-
-  const flushCodeBlock = () => {
-    if (codeBuffer.length === 0) return
-    elements.push(
-      <pre className="content-page__code" key={`code-${elements.length}`}>
-        <code>{codeBuffer.join('\n')}</code>
-      </pre>,
-    )
-    codeBuffer = []
-  }
-
-  const flushBlockquote = () => {
-    if (blockquoteBuffer.length === 0) return
-    elements.push(
-      <blockquote className="content-page__quote" key={`quote-${elements.length}`}>
-        {blockquoteBuffer.map((line, index) => (
-          <p key={`quote-line-${index}`}>{line}</p>
-        ))}
-      </blockquote>,
-    )
-    blockquoteBuffer = []
-  }
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim()
-
-    if (line.startsWith('```')) {
-      flushParagraph()
-      flushList()
-      flushBlockquote()
-      if (inCodeBlock) {
-        flushCodeBlock()
-        inCodeBlock = false
-      } else {
-        inCodeBlock = true
-      }
-      continue
-    }
-
-    if (inCodeBlock) {
-      codeBuffer.push(rawLine)
-      continue
-    }
-
-    if (!line) {
-      flushParagraph()
-      flushList()
-      flushBlockquote()
-      continue
-    }
-    if (line.startsWith('# ')) {
-      flushParagraph()
-      flushList()
-      flushBlockquote()
-      elements.push(<h2 key={`h2-${elements.length}`}>{line.slice(2).trim()}</h2>)
-      continue
-    }
-    if (line.startsWith('## ')) {
-      flushParagraph()
-      flushList()
-      flushBlockquote()
-      elements.push(<h3 key={`h3-${elements.length}`}>{line.slice(3).trim()}</h3>)
-      continue
-    }
-    if (line.startsWith('### ')) {
-      flushParagraph()
-      flushList()
-      flushBlockquote()
-      elements.push(<h4 key={`h4-${elements.length}`}>{line.slice(4).trim()}</h4>)
-      continue
-    }
-    if (line.startsWith('> ')) {
-      flushParagraph()
-      flushList()
-      blockquoteBuffer.push(line.slice(2).trim())
-      continue
-    }
-    if (line.startsWith('- ')) {
-      flushParagraph()
-      flushBlockquote()
-      if (listType && listType !== 'ul') {
-        flushList()
-      }
-      listType = 'ul'
-      listBuffer.push(line.slice(2).trim())
-      continue
-    }
-    if (/^\d+\.\s/.test(line)) {
-      flushParagraph()
-      flushBlockquote()
-      if (listType && listType !== 'ol') {
-        flushList()
-      }
-      listType = 'ol'
-      listBuffer.push(line.replace(/^\d+\.\s/, '').trim())
-      continue
-    }
-    flushBlockquote()
-    paragraphBuffer.push(line)
-  }
-
-  flushParagraph()
-  flushList()
-  flushBlockquote()
-  flushCodeBlock()
-
-  return elements
-}
-
 async function getEntryBySlug(locale: LocaleCode, slug: string) {
   const payload = await getPayload({ config: await getPayloadConfig() })
-  const [pageResult, blogPostResult, navigationResult, footerResult] = await Promise.all([
+  const [pageResult, blogPostResult, footerResult] = await Promise.all([
     payload.find({
       collection: 'pages' as never,
       depth: 0,
@@ -260,14 +127,6 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
       },
     }),
     payload.find({
-      collection: 'navigation-links' as never,
-      depth: 0,
-      fallbackLocale: 'de',
-      limit: 20,
-      locale,
-      sort: 'order',
-    }),
-    payload.find({
       collection: 'footer-links' as never,
       depth: 0,
       fallbackLocale: 'de',
@@ -278,6 +137,47 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
   ])
 
   const post = blogPostResult.docs[0] as FrontendBlogPost | undefined
+  const page = pageResult.docs[0] as FrontendPage | undefined
+  const entry = page
+    ? ({
+        kind: 'page',
+        ...page,
+      } satisfies FrontendEntry)
+    : post
+      ? ({
+          kind: 'post',
+          ...post,
+        } satisfies FrontendEntry)
+      : null
+
+  const targetLocale = getTargetLocale(locale)
+  let localeSwitchHref = `/${targetLocale}`
+
+  if (entry) {
+    const localizedEntry =
+      entry.kind === 'page'
+        ? ((await payload.findByID({
+            collection: 'pages' as never,
+            depth: 0,
+            fallbackLocale: false,
+            id: entry.id as never,
+            locale: targetLocale,
+          }).catch((): null => null)) as (FrontendPage & { id: number }) | null)
+        : ((await payload.findByID({
+            collection: 'blog-posts' as never,
+            depth: 0,
+            fallbackLocale: false,
+            id: entry.id as never,
+            locale: targetLocale,
+          }).catch((): null => null)) as (FrontendBlogPost & { id: number }) | null)
+
+    if (localizedEntry?.url) {
+      localeSwitchHref =
+        entry.kind === 'post' ? `/${targetLocale}/${localizedEntry.url}` : `/${targetLocale}/${localizedEntry.url}`
+    } else {
+      localeSwitchHref = entry.kind === 'post' ? `/${targetLocale}/blog` : `/${targetLocale}`
+    }
+  }
 
   const commentsResult =
     post?.id
@@ -321,30 +221,8 @@ async function getEntryBySlug(locale: LocaleCode, slug: string) {
       footerResult.docs as Array<{ href: string; label: string; openInNewTab?: boolean | null }>,
       getFallbackFooterLinks(locale),
     ),
-    navItems: mapLinks(
-      locale,
-      navigationResult.docs as Array<{ href: string; label: string; openInNewTab?: boolean | null }>,
-      getFallbackNavItems(locale),
-    ),
-    entry: (() => {
-      const page = pageResult.docs[0] as FrontendPage | undefined
-
-      if (page) {
-        return {
-          kind: 'page',
-          ...page,
-        } satisfies FrontendEntry
-      }
-
-      if (post) {
-        return {
-          kind: 'post',
-          ...post,
-        } satisfies FrontendEntry
-      }
-
-      return null
-    })(),
+    entry,
+    localeSwitchHref,
   }
 }
 
@@ -387,7 +265,7 @@ export default async function LocalizedStaticPage({
     notFound()
   }
 
-  const { comments, entry, footerLinks, navItems } = await getEntryBySlug(locale, slug)
+  const { comments, entry, footerLinks, localeSwitchHref } = await getEntryBySlug(locale, slug)
 
   if (!entry) {
     notFound()
@@ -396,37 +274,22 @@ export default async function LocalizedStaticPage({
   const featuredImage = entry.kind === 'post' ? getFeaturedImage(entry) : null
   const productGroups =
     entry.kind === 'post' && Array.isArray(entry.productGroups)
-      ? entry.productGroups.filter((group): group is NonNullable<FrontendBlogPost['productGroups']>[number] & { id: number; title: string; url: string; products: { id?: string | null; link: string; productName: string }[] } => typeof group === 'object' && group !== null)
+      ? entry.productGroups.filter((group): group is NonNullable<FrontendBlogPost['productGroups']>[number] & { id: number; title: string; products: { id?: string | null; link: string; productName: string }[] } => typeof group === 'object' && group !== null)
       : []
+  const products = productGroups.flatMap((group) =>
+    group.products.map((product) => ({
+      ...product,
+      key: `${group.id}-${product.id ?? product.productName}`,
+    })),
+  )
 
   return (
     <div className="site-shell">
-      <header className="site-header">
-        <nav aria-label="Hauptnavigation" className="site-nav">
-          <Link className="brand" href={`/${locale}`}>
-            <span>spacepc</span>
-            <span className="brand__dot">.</span>
-            <span>de</span>
-          </Link>
-
-          <div className="site-nav__links">
-            {navItems.map((item) => (
-              <a
-                href={item.href}
-                key={`${item.label}-${item.href}`}
-                rel={item.openInNewTab ? 'noreferrer' : undefined}
-                target={item.openInNewTab ? '_blank' : undefined}
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
-
-          <Link className="site-nav__cta" href={`/${locale}#kontakt`}>
-            {locale === 'de' ? 'Anfrage senden' : 'Send request'}
-          </Link>
-        </nav>
-      </header>
+      <FrontendHeader
+        currentPath={`/${locale}/${entry.url}`}
+        locale={locale}
+        localeSwitchHref={localeSwitchHref}
+      />
 
       <main className="content-page">
         <section className="section content-page__hero">
@@ -489,7 +352,9 @@ export default async function LocalizedStaticPage({
                   </div>
                 ) : null}
                 {entry.contentMarkdown?.trim() ? (
-                  renderMarkdown(entry.contentMarkdown)
+                  <div
+                    dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(entry.contentMarkdown) }}
+                  />
                 ) : (
                   <p>{locale === 'de' ? 'Diese Seite enthaelt noch keinen Inhalt.' : 'This page has no content yet.'}</p>
                 )}
@@ -506,6 +371,27 @@ export default async function LocalizedStaticPage({
 
           {entry.kind === 'post' ? (
             <aside className="content-page__sidebar">
+              {products.length > 0 ? (
+                <div className="content-page__sidebar-card content-page__sidebar-card--products">
+                  <p className="eyebrow">{locale === 'de' ? 'Produkte' : 'Products'}</p>
+                  <h3>{locale === 'de' ? 'Passende Produkte zum Beitrag' : 'Relevant products for this post'}</h3>
+                  <p className="content-page__sidebar-note">
+                    {locale === 'de'
+                      ? 'Einige Links in diesem Bereich koennen Affiliate Links sein.'
+                      : 'Some links in this section may be affiliate links.'}
+                  </p>
+                  <ul className="content-page__product-list">
+                    {products.slice(0, 8).map((product) => (
+                      <li key={product.key}>
+                        <a href={product.link} rel="noreferrer" target="_blank">
+                          {product.productName}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
               <div className="content-page__sidebar-card">
                 <p className="eyebrow">{locale === 'de' ? 'IT Service' : 'IT Services'}</p>
                 <h3>{locale === 'de' ? 'Unterstuetzung fuer Infrastruktur, Hosting und Betrieb' : 'Support for infrastructure, hosting, and operations'}</h3>
@@ -523,30 +409,6 @@ export default async function LocalizedStaticPage({
                   </a>
                 </div>
               </div>
-
-              {productGroups.length > 0 ? (
-                <div className="content-page__sidebar-card">
-                  <p className="eyebrow">{locale === 'de' ? 'Produktgruppen' : 'Product groups'}</p>
-                  <div className="content-page__group-list">
-                    {productGroups.map((group) => (
-                      <div className="content-page__group" key={group.id}>
-                        <h4>{group.title}</h4>
-                        {group.products.length > 0 ? (
-                          <ul>
-                            {group.products.slice(0, 5).map((product) => (
-                              <li key={`${group.id}-${product.id ?? product.productName}`}>
-                                <a href={product.link} rel="noreferrer" target="_blank">
-                                  {product.productName}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </aside>
           ) : null}
         </section>

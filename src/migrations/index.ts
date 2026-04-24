@@ -9,6 +9,8 @@ import * as migration_20260424_065500_blog_posts_locales_seo from './20260424_06
 import * as migration_20260424_072500_comments_parent from './20260424_072500_comments_parent'
 import * as migration_20260424_083000_blog_posts_status from './20260424_083000_blog_posts_status'
 import * as migration_20260424_084500_blog_posts_status_field from './20260424_084500_blog_posts_status_field'
+import * as migration_20260424_091500_navigation_link_children from './20260424_091500_navigation_link_children'
+import * as migration_20260424_094500_blog_posts_featured from './20260424_094500_blog_posts_featured'
 
 export const migrations = [
   {
@@ -65,5 +67,15 @@ export const migrations = [
     up: migration_20260424_084500_blog_posts_status_field.up,
     down: migration_20260424_084500_blog_posts_status_field.down,
     name: '20260424_084500_blog_posts_status_field',
+  },
+  {
+    up: migration_20260424_091500_navigation_link_children.up,
+    down: migration_20260424_091500_navigation_link_children.down,
+    name: '20260424_091500_navigation_link_children',
+  },
+  {
+    up: migration_20260424_094500_blog_posts_featured.up,
+    down: migration_20260424_094500_blog_posts_featured.down,
+    name: '20260424_094500_blog_posts_featured',
   },
 ]

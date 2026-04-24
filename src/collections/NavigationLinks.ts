@@ -43,5 +43,31 @@ export const NavigationLinks: CollectionConfig = {
         position: 'sidebar',
       },
     },
+    {
+      name: 'children',
+      type: 'array',
+      admin: {
+        initCollapsed: true,
+      },
+      fields: [
+        withTranslationButton({
+          name: 'label',
+          type: 'text',
+          required: true,
+          localized: true,
+        }),
+        withTranslationButton({
+          name: 'href',
+          type: 'text',
+          required: true,
+          localized: true,
+        }),
+        {
+          name: 'openInNewTab',
+          type: 'checkbox',
+          defaultValue: false,
+        },
+      ],
+    },
   ],
 }

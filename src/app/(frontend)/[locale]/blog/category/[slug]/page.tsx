@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { FrontendHeader } from '@/components/frontend/FrontendHeader'
 import {
   buildPostSummary,
   estimateReadingTime,
@@ -19,13 +20,19 @@ import { getPayloadConfig } from '@/payload.config'
 
 export const dynamic = 'force-dynamic'
 
+function getTargetLocale(locale: 'de' | 'en') {
+  return locale === 'de' ? 'en' : 'de'
+}
+
 async function getCategoryPageData(locale: 'de' | 'en', slug: string) {
   const payload = await getPayload({ config: await getPayloadConfig() })
   const [categoryResult, postsResult] = await Promise.all([
     payload.find({
       collection: 'categories',
       depth: 0,
+      fallbackLocale: 'de',
       limit: 1,
+      locale,
       where: {
         url: {
           equals: slug,
@@ -47,8 +54,23 @@ async function getCategoryPageData(locale: 'de' | 'en', slug: string) {
     }),
   ])
 
+  const category = (categoryResult.docs[0] as Category | undefined) ?? null
+  const targetLocale = getTargetLocale(locale)
+  const localizedCategory = category
+    ? ((await payload.findByID({
+        collection: 'categories',
+        depth: 0,
+        fallbackLocale: false,
+        id: category.id,
+        locale: targetLocale,
+      }).catch((): null => null)) as Category | null)
+    : null
+
   return {
-    category: (categoryResult.docs[0] as Category | undefined) ?? null,
+    category,
+    localeSwitchHref: localizedCategory?.url
+      ? `/${targetLocale}/blog/category/${localizedCategory.url}`
+      : `/${targetLocale}/blog`,
     posts: (postsResult.docs as BlogPost[]).filter((post) => {
       if (!isPopulatedCategory(post.categories)) {
         return false
@@ -88,7 +110,7 @@ export default async function CategoryPage({
     notFound()
   }
 
-  const { category, posts } = await getCategoryPageData(locale, slug)
+  const { category, localeSwitchHref, posts } = await getCategoryPageData(locale, slug)
 
   if (!category) {
     notFound()
@@ -96,6 +118,11 @@ export default async function CategoryPage({
 
   return (
     <div className="site-shell">
+      <FrontendHeader
+        currentPath={`/${locale}/blog/category/${slug}`}
+        locale={locale}
+        localeSwitchHref={localeSwitchHref}
+      />
       <main className="content-page blog-index">
         <section className="section content-page__hero">
           <p className="eyebrow">{locale === 'de' ? 'Kategorie' : 'Category'}</p>

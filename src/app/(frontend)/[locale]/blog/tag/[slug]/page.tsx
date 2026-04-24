@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { FrontendHeader } from '@/components/frontend/FrontendHeader'
 import { getLocalizedAlternates, isLocaleCode } from '@/lib/frontend'
 import {
   buildPostSummary,
@@ -19,13 +20,19 @@ import { getPayloadConfig } from '@/payload.config'
 
 export const dynamic = 'force-dynamic'
 
+function getTargetLocale(locale: 'de' | 'en') {
+  return locale === 'de' ? 'en' : 'de'
+}
+
 async function getTagPageData(locale: 'de' | 'en', slug: string) {
   const payload = await getPayload({ config: await getPayloadConfig() })
   const [tagResult, postsResult] = await Promise.all([
     payload.find({
       collection: 'tags',
       depth: 0,
+      fallbackLocale: 'de',
       limit: 1,
+      locale,
       where: {
         url: {
           equals: slug,
@@ -47,7 +54,20 @@ async function getTagPageData(locale: 'de' | 'en', slug: string) {
     }),
   ])
 
+  const tag = (tagResult.docs[0] as Tag | undefined) ?? null
+  const targetLocale = getTargetLocale(locale)
+  const localizedTag = tag
+    ? ((await payload.findByID({
+        collection: 'tags',
+        depth: 0,
+        fallbackLocale: false,
+        id: tag.id,
+        locale: targetLocale,
+      }).catch((): null => null)) as Tag | null)
+    : null
+
   return {
+    localeSwitchHref: localizedTag?.url ? `/${targetLocale}/blog/tag/${localizedTag.url}` : `/${targetLocale}/blog`,
     posts: (postsResult.docs as BlogPost[]).filter((post) => {
       if (!isPopulatedTag(post.tags)) {
         return false
@@ -56,7 +76,7 @@ async function getTagPageData(locale: 'de' | 'en', slug: string) {
       const tags = post.tags as Array<{ url: string }>
       return tags.some((tag) => tag.url === slug)
     }),
-    tag: (tagResult.docs[0] as Tag | undefined) ?? null,
+    tag,
   }
 }
 
@@ -88,7 +108,7 @@ export default async function TagPage({
     notFound()
   }
 
-  const { posts, tag } = await getTagPageData(locale, slug)
+  const { localeSwitchHref, posts, tag } = await getTagPageData(locale, slug)
 
   if (!tag) {
     notFound()
@@ -96,6 +116,11 @@ export default async function TagPage({
 
   return (
     <div className="site-shell">
+      <FrontendHeader
+        currentPath={`/${locale}/blog/tag/${slug}`}
+        locale={locale}
+        localeSwitchHref={localeSwitchHref}
+      />
       <main className="content-page blog-index">
         <section className="section content-page__hero">
           <p className="eyebrow">Tag</p>

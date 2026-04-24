@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { slugField } from '../fields/slug'
+import { normalizeSlug } from '../lib/slugify'
 
 export const ProductGroups: CollectionConfig = {
   slug: 'product-groups',
@@ -18,7 +18,32 @@ export const ProductGroups: CollectionConfig = {
       type: 'text',
       required: true,
     },
-    slugField('title', { localized: false }),
+    {
+      name: 'url',
+      type: 'text',
+      required: true,
+      admin: {
+        condition: () => false,
+        hidden: true,
+      },
+      hooks: {
+        beforeValidate: [
+          ({ data, value }) => {
+            if (typeof value === 'string' && value.trim()) {
+              return normalizeSlug(value)
+            }
+
+            const title = data?.title
+
+            if (typeof title === 'string' && title.trim()) {
+              return normalizeSlug(title)
+            }
+
+            return value
+          },
+        ],
+      },
+    },
     {
       name: 'products',
       type: 'array',
