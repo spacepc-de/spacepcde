@@ -1,5 +1,9 @@
 import type { CollectionConfig } from 'payload'
 
+function getMediaProxyUrl(filename: string) {
+  return `/api/media-proxy/${encodeURIComponent(filename)}`
+}
+
 export const Media: CollectionConfig = {
   slug: 'media',
   access: {
@@ -12,11 +16,11 @@ export const Media: CollectionConfig = {
           return doc
         }
 
-        const url = `/blog-images/${encodeURIComponent(doc.filename)}`
+        const url = getMediaProxyUrl(doc.filename)
 
         return {
           ...doc,
-          thumbnailURL: doc.thumbnailURL ?? url,
+          thumbnailURL: url,
           url,
         }
       },

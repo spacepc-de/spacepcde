@@ -23,12 +23,18 @@ function getMimeType(filename: string) {
   }
 }
 
-async function getMediaResponse(filename: string, method: 'GET' | 'HEAD') {
+function getPublicFallbackUrl(request: Request, filename: string) {
+  return new URL(`/blog-images/${encodeURIComponent(filename)}`, request.url)
+}
+
+async function getMediaResponse(request: Request, filename: string, method: 'GET' | 'HEAD') {
   const { env } = await getCloudflareContext({ async: true })
   const object = await env.R2.get(filename)
 
   if (!object) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    return NextResponse.redirect(getPublicFallbackUrl(request, filename), {
+      status: method === 'HEAD' ? 307 : 302,
+    })
   }
 
   const headers = new Headers()
@@ -52,17 +58,17 @@ async function getMediaResponse(filename: string, method: 'GET' | 'HEAD') {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ filename: string }> },
 ) {
   const { filename } = await params
-  return getMediaResponse(filename, 'GET')
+  return getMediaResponse(request, filename, 'GET')
 }
 
 export async function HEAD(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ filename: string }> },
 ) {
   const { filename } = await params
-  return getMediaResponse(filename, 'HEAD')
+  return getMediaResponse(request, filename, 'HEAD')
 }

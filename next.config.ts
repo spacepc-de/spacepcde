@@ -32,6 +32,9 @@ const nextConfig = {
         pathname: '/blog-images/**',
       },
       {
+        pathname: '/api/media-proxy/**',
+      },
+      {
         pathname: '/api/media/file/**',
       },
     ],
