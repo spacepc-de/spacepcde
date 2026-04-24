@@ -115,7 +115,7 @@ export default async function BlogIndexPage({
           <h1>{locale === 'de' ? 'Technische Artikel, sauber sortiert.' : 'Technical writing, neatly organised.'}</h1>
           <p className="content-page__lead">
             {locale === 'de'
-              ? 'Alle Beitraege mit direktem Zugriff auf Kategorien und Tags.'
+              ? 'Alle Beiträge mit direktem Zugriff auf Kategorien und Tags.'
               : 'All posts with direct access to categories and tags.'}
           </p>
         </section>
@@ -195,7 +195,7 @@ export default async function BlogIndexPage({
             </h3>
             <p>
               {locale === 'de'
-                ? 'IT Service, Blog und technische Inhalte auf einer gemeinsamen Payload-Basis. Klar, direkt und ohne unnoetigen Ueberbau.'
+                ? 'IT Service, Blog und technische Inhalte auf einer gemeinsamen Payload-Basis. Klar, direkt und ohne unnötigen Überbau.'
                 : 'IT service, blog, and technical content on one shared Payload base. Clear, direct, and without unnecessary overhead.'}
             </p>
           </div>

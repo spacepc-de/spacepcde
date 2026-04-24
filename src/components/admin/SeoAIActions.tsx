@@ -36,7 +36,7 @@ export const SeoAIActions = () => {
     }
 
     if (!titleField.value?.trim() && !excerptField.value?.trim() && !contentMarkdownField.value?.trim()) {
-      toast.error('Es fehlen Inhalte fuer die SEO-Generierung.')
+      toast.error('Es fehlen Inhalte für die SEO-Generierung.')
       return
     }
 
@@ -68,7 +68,7 @@ export const SeoAIActions = () => {
 
       seoTitleField.setValue(json.result.seoTitle)
       seoDescriptionField.setValue(json.result.seoDescription)
-      toast.success(json.message ?? 'SEO-Felder wurden mit KI ausgefuellt.')
+      toast.success(json.message ?? 'SEO-Felder wurden mit KI ausgefüllt.')
     } catch {
       toast.error('SEO-Generierung fehlgeschlagen.')
     } finally {

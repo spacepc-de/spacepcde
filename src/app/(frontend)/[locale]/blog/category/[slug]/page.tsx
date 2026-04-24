@@ -129,10 +129,10 @@ export default async function CategoryPage({
           <h1>{category.title}</h1>
           {category.description ? <p className="content-page__lead">{category.description}</p> : null}
           <p className="content-page__lead">
-            {locale === 'de' ? `${posts.length} Beitraege in dieser Kategorie.` : `${posts.length} posts in this category.`}
+            {locale === 'de' ? `${posts.length} Beiträge in dieser Kategorie.` : `${posts.length} posts in this category.`}
           </p>
           <Link className="button button--secondary" href={`/${locale}/blog`}>
-            {locale === 'de' ? 'Zur Blog-Uebersicht' : 'Back to blog'}
+            {locale === 'de' ? 'Zur Blog-Übersicht' : 'Back to blog'}
           </Link>
         </section>
 

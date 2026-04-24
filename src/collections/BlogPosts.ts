@@ -104,7 +104,7 @@ export const BlogPosts: CollectionConfig = {
       type: 'textarea',
       localized: true,
       admin: {
-        description: 'Kurzer Teaser fuer Uebersichten und SEO',
+        description: 'Kurzer Teaser für Übersichten und SEO',
       },
     }),
     {
@@ -121,7 +121,7 @@ export const BlogPosts: CollectionConfig = {
               editor: blogContentEditor,
               admin: {
                 description:
-                  'WYSIWYG-Editor fuer den Beitrag. Markdown-Shortcuts wie #, ## oder - funktionieren direkt beim Tippen.',
+                  'WYSIWYG-Editor für den Beitrag. Markdown-Shortcuts wie #, ## oder - funktionieren direkt beim Tippen.',
               },
             }, 'rewriteMarkdown'),
           ],
@@ -158,7 +158,7 @@ export const BlogPosts: CollectionConfig = {
               type: 'text',
               localized: true,
               admin: {
-                description: 'SEO-Titel fuer Suchmaschinen und Social Previews.',
+                description: 'SEO-Titel für Suchmaschinen und Social Previews.',
               },
             }),
             withTranslationButton({
@@ -166,7 +166,7 @@ export const BlogPosts: CollectionConfig = {
               type: 'textarea',
               localized: true,
               admin: {
-                description: 'SEO-Beschreibung fuer Suchmaschinen und Social Previews.',
+                description: 'SEO-Beschreibung für Suchmaschinen und Social Previews.',
               },
             }),
           ],

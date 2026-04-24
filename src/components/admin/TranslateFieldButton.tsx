@@ -24,12 +24,12 @@ export const TranslateFieldButton = (props: any) => {
 
   const handleTranslate = async () => {
     if (!collectionSlug || !id || !fieldName) {
-      toast.error('Dokument erst speichern, dann uebersetzen.')
+      toast.error('Dokument erst speichern, dann übersetzen.')
       return
     }
 
     if (!value?.trim()) {
-      toast.error('Kein deutscher Inhalt zum Uebersetzen vorhanden.')
+      toast.error('Kein deutscher Inhalt zum Übersetzen vorhanden.')
       return
     }
 
@@ -55,7 +55,7 @@ export const TranslateFieldButton = (props: any) => {
       const json = (await response.json()) as { message?: string; error?: string }
 
       if (!response.ok) {
-        toast.error(json.error ?? 'Uebersetzung fehlgeschlagen.')
+        toast.error(json.error ?? 'Übersetzung fehlgeschlagen.')
         return
       }
 
@@ -65,15 +65,15 @@ export const TranslateFieldButton = (props: any) => {
       if (modified) {
         window.open(currentURL.toString(), '_blank', 'noopener,noreferrer')
         toast.success(
-          `${json.message ?? 'Englische Uebersetzung gespeichert.'} Die englische Version wurde in einem neuen Tab geoeffnet, damit ungespeicherte deutsche Aenderungen nicht verloren gehen.`,
+          `${json.message ?? 'Englische Übersetzung gespeichert.'} Die englische Version wurde in einem neuen Tab geöffnet, damit ungespeicherte deutsche Änderungen nicht verloren gehen.`,
         )
       } else {
-        toast.success(`${json.message ?? 'Englische Uebersetzung gespeichert.'} Wechsel zu EN...`)
+        toast.success(`${json.message ?? 'Englische Übersetzung gespeichert.'} Wechsel zu EN...`)
         router.push(currentURL.toString())
         router.refresh()
       }
     } catch {
-      toast.error('Uebersetzung fehlgeschlagen.')
+      toast.error('Übersetzung fehlgeschlagen.')
     } finally {
       setIsLoading(false)
     }
@@ -85,7 +85,7 @@ export const TranslateFieldButton = (props: any) => {
       style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}
     >
       <Button buttonStyle="secondary" disabled={isDisabled} onClick={handleTranslate}>
-        {isLoading ? 'Uebersetze...' : 'Uebersetzen'}
+        {isLoading ? 'Übersetze...' : 'Übersetzen'}
       </Button>
     </div>
   )

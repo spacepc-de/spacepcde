@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     const { action, collectionSlug, id, input, locale = 'de' } = body
 
     if (!action || !collectionSlug || !id || !input) {
-      return NextResponse.json({ error: 'Unvollstaendige Anfrage.' }, { status: 400 })
+      return NextResponse.json({ error: 'Unvollständige Anfrage.' }, { status: 400 })
     }
 
     if (!process.env.OPENAI_API_KEY) {
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
         .join('\n\n')
 
       if (!source.trim()) {
-        return NextResponse.json({ error: 'Keine Inhalte fuer SEO vorhanden.' }, { status: 400 })
+        return NextResponse.json({ error: 'Keine Inhalte für SEO vorhanden.' }, { status: 400 })
       }
 
       const seoRaw = await runOpenAI({
@@ -139,7 +139,7 @@ export async function POST(request: Request) {
       }
 
       if (!parsed.seoTitle?.trim() || !parsed.seoDescription?.trim()) {
-        return NextResponse.json({ error: 'Keine gueltigen SEO-Daten erhalten.' }, { status: 502 })
+        return NextResponse.json({ error: 'Keine gültigen SEO-Daten erhalten.' }, { status: 502 })
       }
 
       const seoTitle = clampSeoText(parsed.seoTitle, SEO_TITLE_MAX)

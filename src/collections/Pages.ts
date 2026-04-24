@@ -69,7 +69,7 @@ export const Pages: CollectionConfig = {
       type: 'checkbox',
       defaultValue: false,
       admin: {
-        description: 'Fuer Impressum, Datenschutz und aehnliche Seiten.',
+        description: 'Für Impressum, Datenschutz und ähnliche Seiten.',
         position: 'sidebar',
       },
     },
@@ -87,7 +87,7 @@ export const Pages: CollectionConfig = {
                 localized: true,
                 editor: blogContentEditor,
                 admin: {
-                  description: 'WYSIWYG-Editor fuer statische Seiteninhalte.',
+                  description: 'WYSIWYG-Editor für statische Seiteninhalte.',
                 },
               },
               'rewriteMarkdown',
@@ -118,7 +118,7 @@ export const Pages: CollectionConfig = {
                 type: 'text',
                 localized: true,
                 admin: {
-                  description: 'SEO-Titel fuer Suchmaschinen und Social Previews.',
+                  description: 'SEO-Titel für Suchmaschinen und Social Previews.',
                 },
               }),
               'generateSeo',
@@ -129,7 +129,7 @@ export const Pages: CollectionConfig = {
                 type: 'textarea',
                 localized: true,
                 admin: {
-                  description: 'SEO-Beschreibung fuer Suchmaschinen und Social Previews.',
+                  description: 'SEO-Beschreibung für Suchmaschinen und Social Previews.',
                 },
               }),
               'generateSeo',

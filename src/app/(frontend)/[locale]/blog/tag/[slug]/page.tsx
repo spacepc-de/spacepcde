@@ -126,10 +126,10 @@ export default async function TagPage({
           <p className="eyebrow">Tag</p>
           <h1>#{tag.title}</h1>
           <p className="content-page__lead">
-            {locale === 'de' ? `${posts.length} Beitraege mit diesem Tag.` : `${posts.length} posts with this tag.`}
+            {locale === 'de' ? `${posts.length} Beiträge mit diesem Tag.` : `${posts.length} posts with this tag.`}
           </p>
           <Link className="button button--secondary" href={`/${locale}/blog`}>
-            {locale === 'de' ? 'Zur Blog-Uebersicht' : 'Back to blog'}
+            {locale === 'de' ? 'Zur Blog-Übersicht' : 'Back to blog'}
           </Link>
         </section>
 

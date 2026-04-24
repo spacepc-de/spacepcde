@@ -120,6 +120,8 @@ main {
 
 .site-nav__item {
   position: relative;
+  padding-bottom: 0.7rem;
+  margin-bottom: -0.7rem;
 }
 
 .site-nav__link {
@@ -141,7 +143,7 @@ main {
 
 .site-nav__submenu {
   position: absolute;
-  top: calc(100% + 0.85rem);
+  top: calc(100% + 0.12rem);
   left: 0;
   z-index: 30;
   min-width: 13rem;
@@ -154,7 +156,7 @@ main {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(0.35rem);
+  transform: translateY(0.2rem);
   transition:
     opacity 0.18s ease,
     transform 0.18s ease;
@@ -258,6 +260,11 @@ main {
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--line);
+}
+
+.button--service {
+  border-color: color-mix(in srgb, var(--coral) 45%, var(--button-primary-bg));
+  box-shadow: inset 0 0 0 1px rgba(255, 138, 76, 0.14);
 }
 
 .hero {
@@ -506,7 +513,6 @@ main {
   top: 5.5rem;
 }
 
-.featured-column__header,
 .featured-post {
   border: 1px solid var(--line);
   border-radius: 1.4rem;
@@ -535,6 +541,10 @@ main {
 .featured-post p {
   color: var(--ink-soft);
   line-height: 1.7;
+}
+
+.featured-column__header {
+  padding: 0;
 }
 
 .featured-column__list {

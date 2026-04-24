@@ -35,13 +35,13 @@ type FrontendHomePost = BlogPost & {
 const copy = {
   de: {
     contactBody:
-      'Wenn ein System hakt, eine Migration ansteht oder Infrastruktur aufgeraeumt werden muss, reicht eine kurze Mail mit dem Kontext.',
+      'Wenn ein System hakt, eine Migration ansteht oder Infrastruktur aufgeräumt werden muss, reicht eine kurze Mail mit dem Kontext.',
     contactTitle: 'Kontakt',
     current: 'Aktuell',
     footerText:
       'Technische Inhalte, Infrastruktur-Themen und praktische Anleitungen auf einer gemeinsamen Payload-Basis.',
     featuredColumnLabel: 'Featured',
-    featuredHeading: 'Ausgewaehlte Beitraege',
+    featuredHeading: 'Ausgewählte Beiträge',
     headline: 'Technische Inhalte zu Infrastruktur, Hosting, Open Source und digitalen Systemen.',
     heroCtaPrimary: 'Zum Blog',
     heroCtaSecondary: 'IT Service',
@@ -49,8 +49,8 @@ const copy = {
     heroLead:
       'Praxisnahe Artikel, Einordnungen und Anleitungen aus dem echten Betrieb von Systemen, Self-Hosting-Setups und technischer Infrastruktur.',
     latestFallbackBody:
-      'Sobald weitere Blogbeitraege vorliegen, fuellt sich dieser Bereich automatisch.',
-    latestFallbackTitle: 'Nach dem ersten publizierten Beitrag fuellt sich diese Liste automatisch.',
+      'Sobald weitere Blogbeiträge vorliegen, füllt sich dieser Bereich automatisch.',
+    latestFallbackTitle: 'Nach dem ersten publizierten Beitrag füllt sich diese Liste automatisch.',
     latestHeading: 'Neu im Blog',
     latestLabel: 'Neu',
     notYet: 'Inhalt folgt',
@@ -59,20 +59,20 @@ const copy = {
       'Die Startseite priorisiert Inhalte. Das Angebot bleibt sichtbar, aber nachgeordnet und ohne typische Landingpage-Rhetorik.',
     positionLabel: 'Einordnung',
     publishedFallback:
-      'Sobald Blogbeitraege im Backend vorliegen, erscheint hier automatisch der Leitartikel.',
+      'Sobald Blogbeiträge im Backend vorliegen, erscheint hier automatisch der Leitartikel.',
     publishedFallbackTitle:
-      'Ein Leitartikel fuer die Startseite erscheint automatisch mit dem ersten Beitrag.',
+      'Ein Leitartikel für die Startseite erscheint automatisch mit dem ersten Beitrag.',
     request: 'IT Service',
     storyFallback: [
       {
-        body: 'Die Startseite priorisiert Inhalte und haelt die Wege kurz.',
+        body: 'Die Startseite priorisiert Inhalte und hält die Wege kurz.',
         meta: 'Beispiel / 3 Min.',
         title: 'Ein ruhiger Einstieg statt Agenturtext.',
       },
       {
-        body: 'Archiv, Kategorien und einzelne Beitraege bleiben direkt erreichbar.',
+        body: 'Archiv, Kategorien und einzelne Beiträge bleiben direkt erreichbar.',
         meta: 'Beispiel / 2 Min.',
-        title: 'Das Frontend ordnet Inhalte statt sie zu uebertoenen.',
+        title: 'Das Frontend ordnet Inhalte statt sie zu übertönen.',
       },
     ],
     storyHeading: 'Im Fokus',
@@ -197,7 +197,7 @@ export default async function LocalizedHomePage({
   const { footerLinks, posts } = await getHomeData(locale)
   const featuredPosts = posts.filter(isFeaturedPost).slice(0, 3)
   const leadPost = posts[0]
-  const supportingPosts = posts.filter((post) => post.id !== leadPost?.id).slice(0, 3)
+  const supportingPosts = posts.filter((post) => post.id !== leadPost?.id).slice(0, 2)
   const latestPostsBase = posts.filter((post) => !featuredPosts.some((featured) => featured.id === post.id))
   const latestPosts = (latestPostsBase.length > 0 ? latestPostsBase : posts).slice(0, 5)
 
@@ -374,8 +374,8 @@ export default async function LocalizedHomePage({
                 <p className="eyebrow">{locale === 'de' ? 'Kontakt' : 'Contact'}</p>
                 <h3>{localizedCopy.contactTitle}</h3>
                 <p>{localizedCopy.contactBody}</p>
-                <a className="button button--primary" href="mailto:hallo@spacepc.de">
-                  hallo@spacepc.de
+                <a className="button button--primary" href="mailto:hello@spacepc.dev">
+                  hello@spacepc.dev
                 </a>
               </aside>
             </div>

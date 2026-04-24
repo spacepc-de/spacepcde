@@ -24,7 +24,7 @@ export const GenerateSlugButton = ({ path }: Props) => {
     }
 
     if (!nextSlug) {
-      toast.error('Aus dem Titel konnte kein gueltiger Permalink erzeugt werden.')
+      toast.error('Aus dem Titel konnte kein gültiger Permalink erzeugt werden.')
       return
     }
 

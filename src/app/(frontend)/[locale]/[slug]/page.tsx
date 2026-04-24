@@ -356,12 +356,12 @@ export default async function LocalizedStaticPage({
                     dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(entry.contentMarkdown) }}
                   />
                 ) : (
-                  <p>{locale === 'de' ? 'Diese Seite enthaelt noch keinen Inhalt.' : 'This page has no content yet.'}</p>
+                  <p>{locale === 'de' ? 'Diese Seite enthält noch keinen Inhalt.' : 'This page has no content yet.'}</p>
                 )}
                 {entry.kind === 'post' ? (
                   <div className="content-page__actions">
                     <Link className="button button--secondary" href={`/${locale}/blog`}>
-                      {locale === 'de' ? 'Zur Blog-Uebersicht' : 'Back to blog'}
+                      {locale === 'de' ? 'Zur Blog-Übersicht' : 'Back to blog'}
                     </Link>
                   </div>
                 ) : null}
@@ -377,7 +377,7 @@ export default async function LocalizedStaticPage({
                   <h3>{locale === 'de' ? 'Passende Produkte zum Beitrag' : 'Relevant products for this post'}</h3>
                   <p className="content-page__sidebar-note">
                     {locale === 'de'
-                      ? 'Einige Links in diesem Bereich koennen Affiliate Links sein.'
+                      ? 'Einige Links in diesem Bereich können Affiliate-Links sein.'
                       : 'Some links in this section may be affiliate links.'}
                   </p>
                   <ul className="content-page__product-list">
@@ -394,18 +394,18 @@ export default async function LocalizedStaticPage({
 
               <div className="content-page__sidebar-card">
                 <p className="eyebrow">{locale === 'de' ? 'IT Service' : 'IT Services'}</p>
-                <h3>{locale === 'de' ? 'Unterstuetzung fuer Infrastruktur, Hosting und Betrieb' : 'Support for infrastructure, hosting, and operations'}</h3>
+                <h3>{locale === 'de' ? 'Unterstützung für Infrastruktur, Hosting und Betrieb' : 'Support for infrastructure, hosting, and operations'}</h3>
                 <p>
                   {locale === 'de'
                     ? 'Wenn aus einem Artikel ein konkretes Problem, eine Migration oder ein Betriebs-Thema wird, ist spacepc.dev der direkte Weg zum passenden Service.'
                     : 'If a post turns into a concrete issue, migration, or operations task, spacepc.dev is the direct path to the related service.'}
                 </p>
                 <div className="content-page__sidebar-actions">
-                  <a className="button button--primary" href="https://spacepc.dev" rel="noreferrer" target="_blank">
-                    {locale === 'de' ? 'Zu spacepc.dev' : 'Open spacepc.dev'}
+                  <a className="button button--primary button--service" href="https://spacepc.dev" rel="noreferrer" target="_blank">
+                    {locale === 'de' ? 'Zum IT Service' : 'Go to IT services'}
                   </a>
-                  <a className="button button--secondary" href="mailto:hallo@spacepc.de">
-                    hallo@spacepc.de
+                  <a className="button button--secondary" href="mailto:hello@spacepc.dev">
+                    hello@spacepc.dev
                   </a>
                 </div>
               </div>
@@ -426,7 +426,7 @@ export default async function LocalizedStaticPage({
             </h3>
             <p>
               {locale === 'de'
-                ? 'IT Service, Blog und technische Inhalte auf einer gemeinsamen Payload-Basis. Klar, direkt und ohne unnoetigen Ueberbau.'
+                ? 'IT Service, Blog und technische Inhalte auf einer gemeinsamen Payload-Basis. Klar, direkt und ohne unnötigen Überbau.'
                 : 'IT service, blog, and technical content on one shared Payload base. Clear, direct, and without unnecessary overhead.'}
             </p>
           </div>

@@ -42,17 +42,17 @@ export const TranslateAllButton = () => {
 
   const handleTranslateAll = async () => {
     if (!collectionSlug || !id) {
-      toast.error('Dokument erst speichern, dann alles uebersetzen.')
+      toast.error('Dokument erst speichern, dann alles übersetzen.')
       return
     }
 
     if (modified) {
-      toast.error('Bitte zuerst speichern, damit alle Felder konsistent uebersetzt werden.')
+      toast.error('Bitte zuerst speichern, damit alle Felder konsistent übersetzt werden.')
       return
     }
 
     if (availableTasks.length === 0) {
-      toast.error('Keine deutschen Inhalte zum Uebersetzen vorhanden.')
+      toast.error('Keine deutschen Inhalte zum Übersetzen vorhanden.')
       return
     }
 
@@ -79,14 +79,14 @@ export const TranslateAllButton = () => {
         const json = (await response.json()) as { error?: string; message?: string }
 
         if (!response.ok) {
-          toast.error(`${task.label}: ${json.error ?? 'Uebersetzung fehlgeschlagen.'}`)
+          toast.error(`${task.label}: ${json.error ?? 'Übersetzung fehlgeschlagen.'}`)
           return
         }
       }
 
-      toast.success('Titel, Slug, Content und SEO wurden einzeln nach EN uebersetzt.')
+      toast.success('Titel, Slug, Content und SEO wurden einzeln nach EN übersetzt.')
     } catch {
-      toast.error('Gesamtuebersetzung fehlgeschlagen.')
+      toast.error('Gesamtübersetzung fehlgeschlagen.')
     } finally {
       setIsLoading(false)
     }
@@ -107,14 +107,14 @@ export const TranslateAllButton = () => {
         }}
       >
         <div>
-          <strong>Alles uebersetzen</strong>
+          <strong>Alles übersetzen</strong>
           <div style={{ color: 'var(--theme-elevation-600)', fontSize: '0.92rem', marginTop: '0.2rem' }}>
-            Titel, Slug, Content und SEO werden als getrennte KI-Anfragen nach Englisch uebersetzt.
+            Titel, Slug, Content und SEO werden als getrennte KI-Anfragen nach Englisch übersetzt.
           </div>
         </div>
 
         <Button buttonStyle="secondary" disabled={isDisabled} onClick={handleTranslateAll}>
-          {isLoading ? 'Uebersetze Felder...' : 'Alles nach EN uebersetzen'}
+          {isLoading ? 'Übersetze Felder...' : 'Alles nach EN übersetzen'}
         </Button>
       </div>
     </div>

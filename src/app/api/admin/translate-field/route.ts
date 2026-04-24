@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     } = body
 
     if (!collectionSlug || !fieldName || !id || !value?.trim()) {
-      return NextResponse.json({ error: 'Unvollstaendige Anfrage.' }, { status: 400 })
+      return NextResponse.json({ error: 'Unvollständige Anfrage.' }, { status: 400 })
     }
 
     if (!process.env.OPENAI_API_KEY) {
@@ -139,7 +139,7 @@ export async function POST(request: Request) {
         ?.text?.trim()
 
     if (!translatedValue) {
-      return NextResponse.json({ error: 'Keine Uebersetzung erhalten.' }, { status: 502 })
+      return NextResponse.json({ error: 'Keine Übersetzung erhalten.' }, { status: 502 })
     }
 
     const requiredLocalizedFields = getRequiredLocalizedFieldNames(collectionConfig.fields)
@@ -194,13 +194,13 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({
-      message: `Englische Version fuer "${fieldName}" wurde gespeichert.`,
+      message: `Englische Version für "${fieldName}" wurde gespeichert.`,
       translation: translatedValue,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unbekannter Fehler'
     console.error('translate-field failed', error)
 
-    return NextResponse.json({ error: `Uebersetzung fehlgeschlagen: ${message}` }, { status: 500 })
+    return NextResponse.json({ error: `Übersetzung fehlgeschlagen: ${message}` }, { status: 500 })
   }
 }

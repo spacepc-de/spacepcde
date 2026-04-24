@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const postId = body.postId
 
     if (!postId || !authorName || !authorEmail || !content) {
-      return NextResponse.json({ error: 'Bitte Name, E-Mail und Kommentar ausfuellen.' }, { status: 400 })
+      return NextResponse.json({ error: 'Bitte Name, E-Mail und Kommentar ausfüllen.' }, { status: 400 })
     }
 
     const payload = await getPayload({ config: await getPayloadConfig() })
