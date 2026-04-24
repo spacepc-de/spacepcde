@@ -28,33 +28,39 @@ function getPublicFallbackUrl(request: Request, filename: string) {
 }
 
 async function getMediaResponse(request: Request, filename: string, method: 'GET' | 'HEAD') {
-  const { env } = await getCloudflareContext({ async: true })
-  const object = await env.R2.get(filename)
+  try {
+    const { env } = await getCloudflareContext({ async: true })
+    const object = await env.R2.get(filename)
 
-  if (!object) {
+    if (!object) {
+      return NextResponse.redirect(getPublicFallbackUrl(request, filename), {
+        status: method === 'HEAD' ? 307 : 302,
+      })
+    }
+
+    const headers = new Headers()
+
+    object.writeHttpMetadata(headers)
+
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', getMimeType(filename))
+    }
+
+    if (!headers.has('Content-Length')) {
+      headers.set('Content-Length', String(object.size))
+    }
+
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+
+    return new Response(method === 'HEAD' ? null : object.body, {
+      headers,
+      status: 200,
+    })
+  } catch {
     return NextResponse.redirect(getPublicFallbackUrl(request, filename), {
       status: method === 'HEAD' ? 307 : 302,
     })
   }
-
-  const headers = new Headers()
-
-  object.writeHttpMetadata(headers)
-
-  if (!headers.has('Content-Type')) {
-    headers.set('Content-Type', getMimeType(filename))
-  }
-
-  if (!headers.has('Content-Length')) {
-    headers.set('Content-Length', String(object.size))
-  }
-
-  headers.set('Cache-Control', 'public, max-age=31536000, immutable')
-
-  return new Response(method === 'HEAD' ? null : object.body, {
-    headers,
-    status: 200,
-  })
 }
 
 export async function GET(
