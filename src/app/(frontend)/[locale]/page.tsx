@@ -9,6 +9,7 @@ import {
   buildPostSummary,
   estimateReadingTime,
   formatBlogDate,
+  getFeaturedImage,
   getPostTextContent,
   isPopulatedCategory,
   isPopulatedTag,
@@ -258,8 +259,18 @@ export default async function LocalizedHomePage({
           <div className="feature-story__layout">
             <article className="lead-story">
               <div className="lead-story__visual">
-                <div className="lead-story__glow lead-story__glow--one" />
-                <div className="lead-story__glow lead-story__glow--two" />
+                {leadPost && getFeaturedImage(leadPost) ? (
+                  <img
+                    alt={getFeaturedImage(leadPost)?.alt || leadPost.title}
+                    className="card-preview card-preview--lead"
+                    src={getFeaturedImage(leadPost)?.url || ''}
+                  />
+                ) : (
+                  <>
+                    <div className="lead-story__glow lead-story__glow--one" />
+                    <div className="lead-story__glow lead-story__glow--two" />
+                  </>
+                )}
               </div>
               <div className="lead-story__body">
                 <p className="story-meta">
@@ -283,6 +294,13 @@ export default async function LocalizedHomePage({
               {supportingPosts.length > 0
                 ? supportingPosts.map((post) => (
                     <Link className="story-card story-card--link" href={`/${locale}/${post.url}`} key={post.id}>
+                      {getFeaturedImage(post) ? (
+                        <img
+                          alt={getFeaturedImage(post)?.alt || post.title}
+                          className="card-preview card-preview--compact"
+                          src={getFeaturedImage(post)?.url || ''}
+                        />
+                      ) : null}
                       <p className="story-meta">
                         {formatBlogDate(post.publishedAt, locale)} /{' '}
                         {estimateReadingTime(getPostTextContent(post), locale)}
@@ -319,6 +337,13 @@ export default async function LocalizedHomePage({
                 {featuredPosts.length > 0 ? (
                   featuredPosts.map((post) => (
                     <Link className="featured-post" href={`/${locale}/${post.url}`} key={post.id}>
+                      {getFeaturedImage(post) ? (
+                        <img
+                          alt={getFeaturedImage(post)?.alt || post.title}
+                          className="card-preview card-preview--compact"
+                          src={getFeaturedImage(post)?.url || ''}
+                        />
+                      ) : null}
                       <p className="story-meta">
                         {formatBlogDate(post.publishedAt, locale)} / {estimateReadingTime(getPostTextContent(post), locale)}
                       </p>
@@ -334,6 +359,13 @@ export default async function LocalizedHomePage({
               {latestPosts.length > 0 ? (
                 latestPosts.map((post) => (
                   <Link className="latest-post latest-post--link" href={`/${locale}/${post.url}`} key={post.id}>
+                    {getFeaturedImage(post) ? (
+                      <img
+                        alt={getFeaturedImage(post)?.alt || post.title}
+                        className="card-preview card-preview--compact"
+                        src={getFeaturedImage(post)?.url || ''}
+                      />
+                    ) : null}
                     <p className="story-meta">{formatBlogDate(post.publishedAt, locale)}</p>
                     <h3>{post.title}</h3>
                     <p>{buildPostSummary(post)}</p>

@@ -9,6 +9,7 @@ type Props = {
   field: {
     custom?: {
       aiAction?: 'generateSeo' | 'rewriteMarkdown'
+      aiLabel?: string
     }
     name?: string
   }
@@ -30,6 +31,7 @@ export const AIFieldButton = (props: Props) => {
   const { collectionSlug, id } = useDocumentInfo()
   const { code: locale } = useLocale()
   const action = props.field.custom?.aiAction
+  const buttonLabelOverride = props.field.custom?.aiLabel
   const [isLoading, setIsLoading] = useState(false)
 
   const titleField = useField<string>({ path: 'title' })
@@ -141,13 +143,14 @@ export const AIFieldButton = (props: Props) => {
   }
 
   const buttonLabel =
-    action === 'generateSeo'
+    buttonLabelOverride ??
+    (action === 'generateSeo'
       ? isLoading
         ? 'SEO wird erzeugt...'
         : 'SEO mit KI'
       : isLoading
         ? 'Markdown wird erzeugt...'
-        : 'Mit KI in Markdown umschreiben'
+        : 'Mit KI in Markdown umschreiben')
 
   const isDisabled =
     !collectionSlug ||

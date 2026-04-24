@@ -26,6 +26,26 @@ type ResponsesAPIResult = {
   output_text?: string
 }
 
+const SEO_TITLE_MAX = 60
+const SEO_DESCRIPTION_MAX = 155
+
+function clampSeoText(value: string, maxLength: number) {
+  const normalized = value.replace(/\s+/g, ' ').trim()
+
+  if (normalized.length <= maxLength) {
+    return normalized
+  }
+
+  const shortened = normalized.slice(0, maxLength + 1)
+  const lastSpace = shortened.lastIndexOf(' ')
+
+  if (lastSpace >= Math.floor(maxLength * 0.7)) {
+    return shortened.slice(0, lastSpace).trim()
+  }
+
+  return normalized.slice(0, maxLength).trim()
+}
+
 async function runOpenAI({
   input,
   instructions,
@@ -101,11 +121,13 @@ export async function POST(request: Request) {
 
       const seoRaw = await runOpenAI({
         instructions: [
-          'You generate SEO fields for a German website.',
+          `You generate SEO fields for a ${locale === 'en' ? 'English' : 'German'} website.`,
           'Return valid JSON only.',
           'Use the keys "seoTitle" and "seoDescription".',
-          'seoTitle should be concise and strong for Google, usually under 60 characters.',
-          'seoDescription should be informative, natural German, usually under 160 characters.',
+          `Write the result in ${locale === 'en' ? 'natural English' : 'natural German'}.`,
+          `seoTitle must be concise, strong, and no longer than ${SEO_TITLE_MAX} characters.`,
+          `seoDescription must be informative, natural, and no longer than ${SEO_DESCRIPTION_MAX} characters.`,
+          'Avoid filler, keyword stuffing, and quotation marks unless they are essential.',
           'Do not include markdown, commentary, or extra keys.',
         ].join(' '),
         input: source,
@@ -120,11 +142,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Keine gueltigen SEO-Daten erhalten.' }, { status: 502 })
       }
 
+      const seoTitle = clampSeoText(parsed.seoTitle, SEO_TITLE_MAX)
+      const seoDescription = clampSeoText(parsed.seoDescription, SEO_DESCRIPTION_MAX)
+
       return NextResponse.json({
         message: 'SEO-Felder wurden erzeugt.',
         result: {
-          seoDescription: parsed.seoDescription.trim(),
-          seoTitle: parsed.seoTitle.trim(),
+          seoDescription,
+          seoTitle,
         },
       })
     }

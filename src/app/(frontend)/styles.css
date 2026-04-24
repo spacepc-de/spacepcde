@@ -325,6 +325,30 @@ main {
   padding: 1.5rem;
 }
 
+.card-preview {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+}
+
+.card-preview--lead {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+.card-preview--compact {
+  height: 10rem;
+  margin: -1.5rem -1.5rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-preview--list {
+  height: 12rem;
+  margin: -1.5rem -1.5rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
 .story-card--link {
   text-decoration: none;
 }
@@ -388,6 +412,13 @@ main {
   border-radius: 1.4rem;
   background: var(--surface);
   box-shadow: var(--shadow);
+}
+
+.story-card,
+.latest-post,
+.featured-post,
+.blog-list-card {
+  overflow: hidden;
 }
 
 .featured-column__header h3,
@@ -566,6 +597,7 @@ main {
 
 .blog-list-card {
   padding: 1.5rem;
+  overflow: hidden;
 }
 
 .blog-list-card h2 {
@@ -651,5 +683,10 @@ main {
   .latest-post,
   .contact-panel {
     padding: 1.2rem;
+  }
+
+  .card-preview--compact,
+  .card-preview--list {
+    margin: -1.2rem -1.2rem 0.9rem;
   }
 }

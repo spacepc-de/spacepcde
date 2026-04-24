@@ -1,10 +1,14 @@
 import type { Field } from 'payload'
 
 type AIAction = 'generateSeo' | 'rewriteMarkdown'
+type AIButtonOptions = {
+  label?: string
+}
 
 export const withAIButton = <TField extends Field>(
   field: TField,
   action: AIAction,
+  options: AIButtonOptions = {},
 ): TField => {
   const admin = field.admin ?? {}
   const components = (admin.components ?? {}) as Record<string, unknown>
@@ -22,6 +26,7 @@ export const withAIButton = <TField extends Field>(
     custom: {
       ...(field.custom ?? {}),
       aiAction: action,
+      aiLabel: options.label,
     },
   }
 }

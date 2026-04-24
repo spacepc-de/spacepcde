@@ -8,6 +8,7 @@ import {
   estimateReadingTime,
   formatBlogDate,
   getCategoryHref,
+  getFeaturedImage,
   getTagHref,
   isPopulatedCategory,
   isPopulatedTag,
@@ -150,6 +151,13 @@ export default async function BlogIndexPage({
           <div className="blog-list">
             {posts.map((post) => (
               <article className="blog-list-card" key={post.id}>
+                {getFeaturedImage(post) ? (
+                  <img
+                    alt={getFeaturedImage(post)?.alt || post.title}
+                    className="card-preview card-preview--list"
+                    src={getFeaturedImage(post)?.url || ''}
+                  />
+                ) : null}
                 <p className="story-meta">
                   {formatBlogDate(post.publishedAt, locale)} / {estimateReadingTime(post.contentMarkdown || '', locale)}
                 </p>
