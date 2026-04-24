@@ -123,14 +123,20 @@ export const BlogPosts: CollectionConfig = {
                 label: 'Meta-Daten mit KI erzeugen',
               },
             ),
-            withTranslationButton({
-              name: 'seoDescription',
-              type: 'textarea',
-              localized: true,
-              admin: {
-                description: 'SEO-Beschreibung fuer Suchmaschinen und Social Previews.',
+            withAIButton(
+              withTranslationButton({
+                name: 'seoDescription',
+                type: 'textarea',
+                localized: true,
+                admin: {
+                  description: 'SEO-Beschreibung fuer Suchmaschinen und Social Previews.',
+                },
+              }),
+              'generateSeo',
+              {
+                label: 'Meta-Daten mit KI erzeugen',
               },
-            }),
+            ),
           ],
         },
       ],

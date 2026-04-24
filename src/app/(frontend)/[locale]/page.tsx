@@ -38,11 +38,12 @@ const copy = {
       'Technische Inhalte, Infrastruktur-Themen und praktische Anleitungen auf einer gemeinsamen Payload-Basis.',
     featuredColumnLabel: 'Featured',
     featuredHeading: 'Ausgewaehlte Beitraege',
-    headline: 'Technische Notizen, Anleitungen und Infrastruktur-Themen.',
-    heroCtaPrimary: 'Leitartikel',
-    heroCtaSecondary: 'Zum Blog',
+    headline: 'Technische Inhalte zu Infrastruktur, Hosting, Open Source und digitalen Systemen.',
+    heroCtaPrimary: 'Zum Blog',
+    heroCtaSecondary: 'IT Service',
     heroEyebrow: 'spacepc.de',
-    heroLead: 'Neue Texte, ausgewaehlte Beitraege und ein direkter Weg ins Archiv.',
+    heroLead:
+      'Praxisnahe Artikel, Einordnungen und Anleitungen aus dem echten Betrieb von Systemen, Self-Hosting-Setups und technischer Infrastruktur.',
     latestFallbackBody:
       'Sobald weitere Blogbeitraege vorliegen, fuellt sich dieser Bereich automatisch.',
     latestFallbackTitle: 'Nach dem ersten publizierten Beitrag fuellt sich diese Liste automatisch.',
@@ -82,11 +83,12 @@ const copy = {
       'Technical writing, infrastructure topics, and practical guides on one shared Payload base.',
     featuredColumnLabel: 'Featured',
     featuredHeading: 'Selected posts',
-    headline: 'Technical notes, guides, and infrastructure topics.',
-    heroCtaPrimary: 'Lead story',
-    heroCtaSecondary: 'Go to blog',
+    headline: 'Technical writing on infrastructure, hosting, open source, and digital systems.',
+    heroCtaPrimary: 'Go to blog',
+    heroCtaSecondary: 'IT services',
     heroEyebrow: 'spacepc.de',
-    heroLead: 'Fresh writing, selected posts, and a direct path into the archive.',
+    heroLead:
+      'Practical articles, guides, and technical analysis drawn from real-world systems, self-hosting setups, and infrastructure work.',
     latestFallbackBody:
       'As soon as more posts are published, this area fills automatically.',
     latestFallbackTitle: 'After the first published post, this list fills automatically.',
@@ -240,10 +242,10 @@ export default async function LocalizedHomePage({
             <p className="hero__lead">{localizedCopy.heroLead}</p>
 
             <div className="hero__actions">
-              <a className="button button--primary" href={leadPost ? `/${locale}/${leadPost.url}` : `/${locale}/blog`}>
+              <a className="button button--primary" href="#beitraege">
                 {localizedCopy.heroCtaPrimary}
               </a>
-              <a className="button button--secondary" href={`/${locale}/blog`}>
+              <a className="button button--secondary" href="https://spacepc.dev" rel="noreferrer" target="_blank">
                 {localizedCopy.heroCtaSecondary}
               </a>
             </div>
@@ -320,7 +322,7 @@ export default async function LocalizedHomePage({
           </div>
         </section>
 
-        <section className="section latest-posts">
+        <section className="section latest-posts" id="beitraege">
           <div className="section-heading">
             <p className="eyebrow">{localizedCopy.latestLabel}</p>
             <h2>{localizedCopy.latestHeading}</h2>
