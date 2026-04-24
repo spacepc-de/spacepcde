@@ -38,13 +38,12 @@ const copy = {
       'Wenn ein System hakt, eine Migration ansteht oder Infrastruktur aufgeräumt werden muss, reicht eine kurze Mail mit dem Kontext.',
     contactTitle: 'Kontakt',
     current: 'Aktuell',
-    footerText:
-      'Technische Inhalte, Infrastruktur-Themen und praktische Anleitungen auf einer gemeinsamen Payload-Basis.',
+    footerText: 'Technik verstehen. Systeme verbessern. Probleme lösen.',
     featuredColumnLabel: 'Featured',
     featuredHeading: 'Ausgewählte Beiträge',
     headline: 'Technik verstehen. Systeme verbessern. Probleme lösen.',
     heroCtaPrimary: 'Zum Blog',
-    heroCtaSecondary: 'IT Service',
+    heroCtaSecondary: 'Projekt anfragen',
     heroEyebrow: 'spacepc.de',
     heroLead:
       'Anleitungen, Projekte und Lösungen rund um Linux, HomeLab, DevOps, Monitoring, Hardware und smarte Infrastruktur.',
@@ -62,7 +61,7 @@ const copy = {
       'Sobald Blogbeiträge im Backend vorliegen, erscheint hier automatisch der Leitartikel.',
     publishedFallbackTitle:
       'Ein Leitartikel für die Startseite erscheint automatisch mit dem ersten Beitrag.',
-    request: 'IT Service',
+    request: 'Projekt anfragen',
     storyFallback: [
       {
         body: 'Die Startseite priorisiert Inhalte und hält die Wege kurz.',
@@ -89,7 +88,7 @@ const copy = {
     featuredHeading: 'Selected posts',
     headline: 'Understand technology. Improve systems. Solve problems.',
     heroCtaPrimary: 'Go to blog',
-    heroCtaSecondary: 'IT services',
+    heroCtaSecondary: 'Start a project',
     heroEyebrow: 'spacepc.de',
     heroLead:
       'Guides, projects, and solutions around Linux, homelab, DevOps, monitoring, hardware, and smart infrastructure.',
@@ -107,7 +106,7 @@ const copy = {
       'As soon as blog posts exist in the backend, the lead story appears here automatically.',
     publishedFallbackTitle:
       'A lead article for the homepage appears automatically with the first post.',
-    request: 'IT Service',
+    request: 'Start a project',
     storyFallback: [
       {
         body: 'The homepage prioritises content and keeps the paths short.',

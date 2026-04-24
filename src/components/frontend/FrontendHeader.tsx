@@ -33,7 +33,7 @@ export async function FrontendHeader({ currentPath, locale, localeSwitchHref }: 
   return (
     <SiteHeader
       contactHref="https://spacepc.dev"
-      contactLabel="IT Service"
+      contactLabel={locale === 'de' ? 'Projekt anfragen' : 'Start a project'}
       currentPath={currentPath}
       locale={locale}
       localeSwitchHref={localeSwitchHref}

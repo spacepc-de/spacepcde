@@ -295,35 +295,35 @@ export default async function LocalizedStaticPage({
       />
 
       <main className="content-page">
-        <section className="section content-page__hero">
-          <p className="eyebrow">
-            {entry.kind === 'post'
-              ? locale === 'de'
-                ? 'Blog'
-                : 'Blog'
-              : entry.isLegalPage
-                ? locale === 'de'
-                  ? 'Rechtliches'
-                  : 'Legal'
-                : locale === 'de'
-                  ? 'Seite'
-                  : 'Page'}
-          </p>
-            <h1>{entry.title}</h1>
-          {entry.kind === 'post' ? (
-            <div className="content-page__post-meta">
-              <p className="story-meta content-page__meta">{formatBlogDate(entry.publishedAt, locale)}</p>
-              {entry.author && typeof entry.author !== 'number' ? (
-                <p className="content-page__author">
-                  {locale === 'de' ? 'Von' : 'By'} {entry.author.name}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-        </section>
-
         <section className="section content-page__layout">
           <div className="content-page__main">
+            <div className="content-page__hero">
+              <p className="eyebrow">
+                {entry.kind === 'post'
+                  ? locale === 'de'
+                    ? 'Blog'
+                    : 'Blog'
+                  : entry.isLegalPage
+                    ? locale === 'de'
+                      ? 'Rechtliches'
+                      : 'Legal'
+                    : locale === 'de'
+                      ? 'Seite'
+                      : 'Page'}
+              </p>
+              <h1>{entry.title}</h1>
+              {entry.kind === 'post' ? (
+                <div className="content-page__post-meta">
+                  <p className="story-meta content-page__meta">{formatBlogDate(entry.publishedAt, locale)}</p>
+                  {entry.author && typeof entry.author !== 'number' ? (
+                    <p className="content-page__author">
+                      {locale === 'de' ? 'Von' : 'By'} {entry.author.name}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
             <article className="content-page__card">
               {featuredImage ? (
                 <div className="content-page__image-wrap">
@@ -400,12 +400,12 @@ export default async function LocalizedStaticPage({
                 <h3>{locale === 'de' ? 'Unterstützung für Infrastruktur, Hosting und Betrieb' : 'Support for infrastructure, hosting, and operations'}</h3>
                 <p>
                   {locale === 'de'
-                    ? 'Wenn aus einem Artikel ein konkretes Problem, eine Migration oder ein Betriebs-Thema wird, ist spacepc.dev der direkte Weg zum passenden Service.'
+                    ? 'Problem beim Setup oder Betrieb? Schreib mir.'
                     : 'If a post turns into a concrete issue, migration, or operations task, spacepc.dev is the direct path to the related service.'}
                 </p>
                 <div className="content-page__sidebar-actions">
                   <a className="button button--primary button--service" href="https://spacepc.dev" rel="noreferrer" target="_blank">
-                    {locale === 'de' ? 'Zum IT Service' : 'Go to IT services'}
+                    {locale === 'de' ? 'Projekt anfragen' : 'Start a project'}
                   </a>
                   <a className="button button--secondary" href="mailto:hello@spacepc.dev">
                     hello@spacepc.dev

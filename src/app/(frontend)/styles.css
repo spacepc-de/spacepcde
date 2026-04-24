@@ -672,8 +672,8 @@ main {
 }
 
 .content-page__hero h1 {
-  max-width: 20ch;
   font-size: clamp(2.4rem, 4vw, 4.2rem);
+  max-width: none;
 }
 
 .content-page__meta {
