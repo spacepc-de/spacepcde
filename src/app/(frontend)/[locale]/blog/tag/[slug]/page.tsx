@@ -18,7 +18,7 @@ import {
 import type { BlogPost, Tag } from '@/payload-types'
 import { getPayloadConfig } from '@/payload.config'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 function getTargetLocale(locale: 'de' | 'en') {
   return locale === 'de' ? 'en' : 'de'

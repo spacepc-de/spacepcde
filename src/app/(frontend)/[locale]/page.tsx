@@ -26,7 +26,7 @@ import {
 import { getPayloadConfig } from '@/payload.config'
 import '../styles.css'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 type FrontendHomePost = BlogPost & {
   featured?: boolean | null
@@ -297,15 +297,9 @@ export default async function LocalizedHomePage({
         </section>
 
         <section className="section latest-posts" id="beitraege">
-          <div className="section-heading">
-            <p className="eyebrow">{localizedCopy.latestLabel}</p>
-            <h2>{localizedCopy.latestHeading}</h2>
-          </div>
-
           <div className="latest-posts__layout">
             <aside className="featured-column">
               <div className="featured-column__header">
-                <p className="eyebrow">{localizedCopy.featuredColumnLabel}</p>
                 <h3>{localizedCopy.featuredHeading}</h3>
               </div>
 
@@ -331,53 +325,59 @@ export default async function LocalizedHomePage({
               </div>
             </aside>
 
-            <div className="latest-posts__list">
-              {latestPosts.length > 0 ? (
-                latestPosts.map((post) => (
-                  <Link className="latest-post latest-post--link" href={`/${locale}/${post.url}`} key={post.id}>
-                    {getFeaturedImage(post) ? (
-                      <img
-                        alt={getFeaturedImage(post)?.alt || post.title}
-                        className="card-preview card-preview--compact"
-                        src={getFeaturedImage(post)?.url || ''}
-                      />
-                    ) : null}
-                    <p className="story-meta">{formatBlogDate(post.publishedAt, locale)}</p>
-                    <h3>{post.title}</h3>
-                    <p>{buildPostSummary(post)}</p>
-                    <div className="blog-card__taxonomy">
-                      {isPopulatedCategory(post.categories)
-                        ? (post.categories as PopulatedCategory[]).slice(0, 2).map((category) => (
-                            <span className="tag-pill" key={`cat-${category.id}`}>
-                              {category.title}
-                            </span>
-                          ))
-                        : null}
-                      {isPopulatedTag(post.tags)
-                        ? (post.tags as PopulatedTag[]).slice(0, 2).map((tag) => (
-                            <span className="tag-pill tag-pill--neutral" key={`tag-${tag.id}`}>
-                              #{tag.title}
-                            </span>
-                          ))
-                        : null}
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <article className="latest-post">
-                  <p className="story-meta">{localizedCopy.notYet}</p>
-                  <h3>{localizedCopy.latestFallbackTitle}</h3>
-                  <p>{localizedCopy.latestFallbackBody}</p>
-                </article>
-              )}
-              <aside className="contact-panel" id="kontakt">
-                <p className="eyebrow">{locale === 'de' ? 'Kontakt' : 'Contact'}</p>
-                <h3>{localizedCopy.contactTitle}</h3>
-                <p>{localizedCopy.contactBody}</p>
-                <a className="button button--primary" href="mailto:hello@spacepc.dev">
-                  hello@spacepc.dev
-                </a>
-              </aside>
+            <div className="latest-posts__main">
+              <div className="latest-posts__header">
+                <h2>{localizedCopy.latestHeading}</h2>
+              </div>
+
+              <div className="latest-posts__list">
+                {latestPosts.length > 0 ? (
+                  latestPosts.map((post) => (
+                    <Link className="latest-post latest-post--link" href={`/${locale}/${post.url}`} key={post.id}>
+                      {getFeaturedImage(post) ? (
+                        <img
+                          alt={getFeaturedImage(post)?.alt || post.title}
+                          className="card-preview card-preview--compact"
+                          src={getFeaturedImage(post)?.url || ''}
+                        />
+                      ) : null}
+                      <p className="story-meta">{formatBlogDate(post.publishedAt, locale)}</p>
+                      <h3>{post.title}</h3>
+                      <p>{buildPostSummary(post)}</p>
+                      <div className="blog-card__taxonomy">
+                        {isPopulatedCategory(post.categories)
+                          ? (post.categories as PopulatedCategory[]).slice(0, 2).map((category) => (
+                              <span className="tag-pill" key={`cat-${category.id}`}>
+                                {category.title}
+                              </span>
+                            ))
+                          : null}
+                        {isPopulatedTag(post.tags)
+                          ? (post.tags as PopulatedTag[]).slice(0, 2).map((tag) => (
+                              <span className="tag-pill tag-pill--neutral" key={`tag-${tag.id}`}>
+                                #{tag.title}
+                              </span>
+                            ))
+                          : null}
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <article className="latest-post">
+                    <p className="story-meta">{localizedCopy.notYet}</p>
+                    <h3>{localizedCopy.latestFallbackTitle}</h3>
+                    <p>{localizedCopy.latestFallbackBody}</p>
+                  </article>
+                )}
+                <aside className="contact-panel" id="kontakt">
+                  <p className="eyebrow">{locale === 'de' ? 'Kontakt' : 'Contact'}</p>
+                  <h3>{localizedCopy.contactTitle}</h3>
+                  <p>{localizedCopy.contactBody}</p>
+                  <a className="button button--primary" href="mailto:hello@spacepc.dev">
+                    hello@spacepc.dev
+                  </a>
+                </aside>
+              </div>
             </div>
           </div>
         </section>

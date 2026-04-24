@@ -78,9 +78,9 @@ main {
 }
 
 .site-nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   padding: 1rem 0;
 }
@@ -89,7 +89,7 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  margin-left: auto;
+  justify-self: end;
 }
 
 .brand {
@@ -116,6 +116,7 @@ main {
   align-items: center;
   gap: 1.2rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .site-nav__item {
@@ -263,6 +264,8 @@ main {
 }
 
 .button--service {
+  color: var(--ink);
+  background: transparent;
   border-color: color-mix(in srgb, var(--coral) 45%, var(--button-primary-bg));
   box-shadow: inset 0 0 0 1px rgba(255, 138, 76, 0.14);
 }
@@ -505,6 +508,12 @@ main {
   gap: 1rem;
 }
 
+.latest-posts__main {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
 .featured-column {
   display: grid;
   gap: 1rem;
@@ -528,6 +537,7 @@ main {
 }
 
 .featured-column__header h3,
+.latest-posts__header h2,
 .featured-post h4 {
   margin: 0;
   letter-spacing: -0.03em;
@@ -535,6 +545,14 @@ main {
 
 .featured-column__header h3 {
   font-size: clamp(1.5rem, 2vw, 2rem);
+}
+
+.latest-posts__header {
+  padding: 0 0 0 0.1rem;
+}
+
+.latest-posts__header h2 {
+  font-size: clamp(2rem, 3vw, 3.4rem);
 }
 
 .featured-column__header p,
@@ -973,7 +991,7 @@ main {
 
 .comments-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
 }

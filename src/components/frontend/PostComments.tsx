@@ -66,7 +66,7 @@ export function PostComments({ comments, locale, postId }: Props) {
           commentCount: `${comments.length} Kommentar${comments.length === 1 ? '' : 'e'}`,
           content: 'Kommentar',
           email: 'E-Mail',
-          empty: 'Noch keine freigegebenen Kommentare.',
+          empty: 'Noch keine Kommentare.',
           name: 'Name',
           reply: 'Antworten',
           replyTo: 'Antwort auf Kommentar',
@@ -133,7 +133,7 @@ export function PostComments({ comments, locale, postId }: Props) {
   }
 
   return (
-    <section className="comments-section">
+    <section className="comments-section section">
       <div className="section-heading">
         <p className="eyebrow">{labels.title}</p>
         <h2>{labels.commentCount}</h2>

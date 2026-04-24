@@ -18,7 +18,7 @@ import { getFallbackFooterLinks, getLocalizedAlternates, isLocaleCode, mapLinks 
 import type { BlogPost, Category, FooterLink, Tag } from '@/payload-types'
 import { getPayloadConfig } from '@/payload.config'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 async function getBlogIndexData(locale: 'de' | 'en') {
   const payload = await getPayload({ config: await getPayloadConfig() })

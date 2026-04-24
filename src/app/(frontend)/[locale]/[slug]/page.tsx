@@ -24,7 +24,7 @@ import {
   type LocaleCode,
 } from '@/lib/frontend'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 21600
 
 function getTargetLocale(locale: LocaleCode): LocaleCode {
   return locale === 'de' ? 'en' : 'de'
