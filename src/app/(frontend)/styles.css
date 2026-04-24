@@ -518,6 +518,14 @@ main {
   font-size: clamp(2rem, 3vw, 3rem);
 }
 
+.featured-column__header h3,
+.latest-posts__header h2 {
+  margin: 0;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-size: clamp(1.55rem, 2.1vw, 2.3rem);
+}
+
 .tag-row {
   display: flex;
   flex-wrap: wrap;
@@ -668,6 +676,7 @@ main {
 }
 
 .content-page__hero {
+  grid-column: 1 / -1;
   padding: 2rem 0 1rem;
 }
 

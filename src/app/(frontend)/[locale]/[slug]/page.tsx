@@ -296,34 +296,34 @@ export default async function LocalizedStaticPage({
 
       <main className="content-page">
         <section className="section content-page__layout">
-          <div className="content-page__main">
-            <div className="content-page__hero">
-              <p className="eyebrow">
-                {entry.kind === 'post'
+          <div className="content-page__hero">
+            <p className="eyebrow">
+              {entry.kind === 'post'
+                ? locale === 'de'
+                  ? 'Blog'
+                  : 'Blog'
+                : entry.isLegalPage
                   ? locale === 'de'
-                    ? 'Blog'
-                    : 'Blog'
-                  : entry.isLegalPage
-                    ? locale === 'de'
-                      ? 'Rechtliches'
-                      : 'Legal'
-                    : locale === 'de'
-                      ? 'Seite'
-                      : 'Page'}
-              </p>
-              <h1>{entry.title}</h1>
-              {entry.kind === 'post' ? (
-                <div className="content-page__post-meta">
-                  <p className="story-meta content-page__meta">{formatBlogDate(entry.publishedAt, locale)}</p>
-                  {entry.author && typeof entry.author !== 'number' ? (
-                    <p className="content-page__author">
-                      {locale === 'de' ? 'Von' : 'By'} {entry.author.name}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
+                    ? 'Rechtliches'
+                    : 'Legal'
+                  : locale === 'de'
+                    ? 'Seite'
+                    : 'Page'}
+            </p>
+            <h1>{entry.title}</h1>
+            {entry.kind === 'post' ? (
+              <div className="content-page__post-meta">
+                <p className="story-meta content-page__meta">{formatBlogDate(entry.publishedAt, locale)}</p>
+                {entry.author && typeof entry.author !== 'number' ? (
+                  <p className="content-page__author">
+                    {locale === 'de' ? 'Von' : 'By'} {entry.author.name}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
 
+          <div className="content-page__main">
             <article className="content-page__card">
               {featuredImage ? (
                 <div className="content-page__image-wrap">
@@ -397,7 +397,7 @@ export default async function LocalizedStaticPage({
 
               <div className="content-page__sidebar-card">
                 <p className="eyebrow">{locale === 'de' ? 'IT Service' : 'IT Services'}</p>
-                <h3>{locale === 'de' ? 'Unterstützung für Infrastruktur, Hosting und Betrieb' : 'Support for infrastructure, hosting, and operations'}</h3>
+                <h3>{locale === 'de' ? 'Unterstützung für Linux, Docker & Infrastruktur' : 'Support for Linux, Docker, and infrastructure'}</h3>
                 <p>
                   {locale === 'de'
                     ? 'Problem beim Setup oder Betrieb? Schreib mir.'
@@ -405,7 +405,7 @@ export default async function LocalizedStaticPage({
                 </p>
                 <div className="content-page__sidebar-actions">
                   <a className="button button--primary button--service" href="https://spacepc.dev" rel="noreferrer" target="_blank">
-                    {locale === 'de' ? 'Projekt anfragen' : 'Start a project'}
+                    {locale === 'de' ? 'Support anfragen' : 'Request support'}
                   </a>
                   <a className="button button--secondary" href="mailto:hello@spacepc.dev">
                     hello@spacepc.dev
