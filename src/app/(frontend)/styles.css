@@ -566,6 +566,78 @@ main {
   gap: 1rem;
 }
 
+.not-found-page {
+  display: grid;
+  align-items: center;
+  min-height: calc(100vh - 15rem);
+  padding-top: 4rem;
+  padding-bottom: 5rem;
+}
+
+.not-found-page__content {
+  width: min(860px, 100%);
+  display: grid;
+  gap: 1.5rem;
+}
+
+.not-found-page__content h1 {
+  margin: 0;
+  font-size: clamp(2.8rem, 6vw, 5.4rem);
+  letter-spacing: -0.05em;
+  line-height: 0.96;
+  max-width: 14ch;
+}
+
+.not-found-page__lead {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.not-found-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.not-found-page__panel {
+  width: min(100%, 720px);
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.not-found-page__panel h2,
+.not-found-page__panel p {
+  margin: 0;
+}
+
+.not-found-page__panel p {
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+
+.not-found-page__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+}
+
+.not-found-page__links a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.not-found-page__links a:hover {
+  color: var(--sky);
+}
+
 .latest-posts__main {
   display: grid;
   gap: 1rem;
