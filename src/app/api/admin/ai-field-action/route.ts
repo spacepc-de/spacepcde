@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
 import { syncBlogContent } from '@/lib/blogContent'
+import { getRuntimeEnvValue } from '@/lib/runtimeEnv'
 import { getPayloadConfig } from '@/payload.config'
 
 type Action = 'generateSeo' | 'rewriteMarkdown'
@@ -53,12 +54,17 @@ async function runOpenAI({
   input: string
   instructions: string
 }) {
-  const model = process.env.OPENAI_TRANSLATION_MODEL || 'gpt-5.2'
+  const apiKey = await getRuntimeEnvValue('OPENAI_API_KEY')
+  const model = (await getRuntimeEnvValue('OPENAI_TRANSLATION_MODEL')) || 'gpt-5.2'
+
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY ist nicht gesetzt.')
+  }
 
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -94,7 +100,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unvollständige Anfrage.' }, { status: 400 })
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    const openAIKey = await getRuntimeEnvValue('OPENAI_API_KEY')
+
+    if (!openAIKey) {
       return NextResponse.json({ error: 'OPENAI_API_KEY ist nicht gesetzt.' }, { status: 500 })
     }
 
