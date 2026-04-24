@@ -27,15 +27,31 @@ function getPublicFallbackUrl(request: Request, filename: string) {
   return new URL(`/blog-images/${encodeURIComponent(filename)}`, request.url)
 }
 
+async function getPublicFallbackResponse(request: Request, filename: string, method: 'GET' | 'HEAD') {
+  const response = await fetch(getPublicFallbackUrl(request, filename), {
+    method,
+  })
+
+  if (!response.ok) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  const headers = new Headers(response.headers)
+  headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+
+  return new Response(method === 'HEAD' ? null : response.body, {
+    headers,
+    status: response.status,
+  })
+}
+
 async function getMediaResponse(request: Request, filename: string, method: 'GET' | 'HEAD') {
   try {
     const { env } = await getCloudflareContext({ async: true })
     const object = await env.R2.get(filename)
 
     if (!object) {
-      return NextResponse.redirect(getPublicFallbackUrl(request, filename), {
-        status: method === 'HEAD' ? 307 : 302,
-      })
+      return getPublicFallbackResponse(request, filename, method)
     }
 
     const headers = new Headers()
@@ -57,9 +73,7 @@ async function getMediaResponse(request: Request, filename: string, method: 'GET
       status: 200,
     })
   } catch {
-    return NextResponse.redirect(getPublicFallbackUrl(request, filename), {
-      status: method === 'HEAD' ? 307 : 302,
-    })
+    return getPublicFallbackResponse(request, filename, method)
   }
 }
 
