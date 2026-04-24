@@ -34,17 +34,44 @@ export const syncBlogContent = async ({
   content,
   contentMarkdown,
   config,
+  originalContent,
+  originalContentMarkdown,
 }: {
   config: Parameters<typeof editorConfigFactory.fromEditor>[0]['config']
   content: unknown
   contentMarkdown: unknown
+  originalContent?: unknown
+  originalContentMarkdown?: unknown
 }) => {
   const editorConfig = await getBlogContentEditorConfig(config)
+  const stringify = (value: unknown) => {
+    if (value === undefined) {
+      return undefined
+    }
+
+    return JSON.stringify(value)
+  }
+
+  const contentChanged =
+    originalContent !== undefined && stringify(content) !== stringify(originalContent)
+  const markdownChanged =
+    originalContentMarkdown !== undefined &&
+    String(contentMarkdown ?? '') !== String(originalContentMarkdown ?? '')
+
+  if (contentChanged && !markdownChanged && isLexicalContent(content)) {
+    return {
+      content,
+      contentMarkdown: convertLexicalToMarkdown({
+        data: content as never,
+        editorConfig,
+      }),
+    }
+  }
 
   if (typeof contentMarkdown === 'string') {
     const normalizedMarkdown = contentMarkdown.trim()
 
-    if (normalizedMarkdown) {
+    if (normalizedMarkdown && (markdownChanged || !isLexicalContent(content))) {
       return {
         content: convertMarkdownToLexical({
           editorConfig,
@@ -55,16 +82,6 @@ export const syncBlogContent = async ({
     }
   }
 
-  if (typeof content === 'string' && content.trim()) {
-    return {
-      content: convertMarkdownToLexical({
-        editorConfig,
-        markdown: content,
-      }),
-      contentMarkdown: content,
-    }
-  }
-
   if (isLexicalContent(content)) {
     return {
       content,
@@ -72,6 +89,16 @@ export const syncBlogContent = async ({
         data: content as never,
         editorConfig,
       }),
+    }
+  }
+
+  if (typeof content === 'string' && content.trim()) {
+    return {
+      content: convertMarkdownToLexical({
+        editorConfig,
+        markdown: content,
+      }),
+      contentMarkdown: content,
     }
   }
 

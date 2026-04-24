@@ -1,7 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { notFound, permanentRedirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { FrontendHeader } from '@/components/frontend/FrontendHeader'
@@ -25,14 +25,6 @@ import {
 } from '@/lib/frontend'
 
 export const revalidate = 21600
-
-const LEGACY_POST_REDIRECTS: Record<string, string> = {
-  'meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir': '/de/meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir',
-  'wetter-display-mit-esp32-und-3d-druck-gehaeuse': '/de/wetter-display-mit-esp32-und-3d-druck-gehaeuse',
-  'luftqualitaetssensor-mittels-esp32-co2-luftfeuchtigkeit-temperatur':
-    '/de/luftqualitaetssensor-mittels-esp32-co2-luftfeuchtigkeit-temperatur',
-  'anormales-verhalten-erkennen-mit-zabbix': '/de/anormales-verhalten-erkennen-mit-zabbix',
-}
 
 function getTargetLocale(locale: LocaleCode): LocaleCode {
   return locale === 'de' ? 'en' : 'de'
@@ -274,12 +266,6 @@ export default async function LocalizedStaticPage({
 
   if (!isLocaleCode(locale)) {
     notFound()
-  }
-
-  const legacyRedirect = LEGACY_POST_REDIRECTS[slug]
-
-  if (legacyRedirect) {
-    permanentRedirect(legacyRedirect)
   }
 
   const { comments, entry, footerLinks, localeSwitchHref } = await getEntryBySlug(locale, slug)

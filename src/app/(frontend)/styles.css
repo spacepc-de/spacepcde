@@ -85,6 +85,14 @@ main {
   padding: 1rem 0;
 }
 
+.site-nav__desktop {
+  display: contents;
+}
+
+.site-nav__mobile {
+  display: none;
+}
+
 .site-nav__actions {
   display: inline-flex;
   align-items: center;
@@ -255,6 +263,48 @@ main {
   color: var(--button-primary-text);
   background: var(--button-primary-bg);
   border: 1px solid var(--button-primary-bg);
+}
+
+.site-nav__menu {
+  width: 100%;
+}
+
+.site-nav__menu summary {
+  list-style: none;
+}
+
+.site-nav__menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.site-nav__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.75rem;
+  min-width: 7rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.site-nav__toggle-icon {
+  color: var(--slate);
+  transition: transform 0.18s ease;
+}
+
+.site-nav__menu[open] .site-nav__toggle-icon {
+  transform: rotate(45deg);
+}
+
+.site-nav__menu-panel {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
 }
 
 .button--secondary {
@@ -1131,33 +1181,46 @@ main {
 
   .site-nav {
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
+    align-items: center;
     gap: 0.85rem;
     padding: 0.85rem 0;
   }
 
-  .site-nav__links {
-    grid-column: 1 / -1;
+  .site-nav__desktop {
+    display: none;
+  }
+
+  .site-nav__mobile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.55rem;
+    justify-self: end;
+  }
+
+  .site-nav__menu {
+    position: relative;
+  }
+
+  .site-nav__menu-panel {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    right: 0;
+    width: min(22rem, calc(100vw - 1.2rem));
+    padding: 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: 1.2rem;
+    background: rgba(10, 16, 24, 0.96);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+    z-index: 40;
+  }
+
+  .site-nav__links--mobile {
     width: 100%;
+    display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 0.65rem;
-    order: 3;
-  }
-
-  .site-nav__actions {
-    width: auto;
-    justify-content: flex-end;
-    justify-self: end;
-    margin-left: 0;
-    flex-wrap: wrap;
-    gap: 0.55rem;
-  }
-
-  .site-nav__item {
-    width: 100%;
-    padding-bottom: 0;
-    margin-bottom: 0;
   }
 
   .site-nav__link {
@@ -1185,8 +1248,19 @@ main {
     padding: 0.8rem 0.9rem;
   }
 
+  .site-nav__actions--mobile {
+    width: 100%;
+    display: flex;
+    justify-content: stretch;
+  }
+
+  .site-nav__actions--mobile .site-nav__cta {
+    width: 100%;
+  }
+
   .site-nav__locale,
-  .site-nav__cta {
+  .site-nav__cta,
+  .site-nav__toggle {
     min-height: 2.75rem;
     padding: 0.7rem 1rem;
   }

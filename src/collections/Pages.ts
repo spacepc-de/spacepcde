@@ -31,7 +31,7 @@ export const Pages: CollectionConfig = {
       },
     ],
     beforeValidate: [
-      async ({ data, req }) => {
+      async ({ data, originalDoc, req }) => {
         if (!data) {
           return data
         }
@@ -40,6 +40,8 @@ export const Pages: CollectionConfig = {
           config: req.payload.config,
           content: data.content,
           contentMarkdown: data.contentMarkdown,
+          originalContent: originalDoc?.content,
+          originalContentMarkdown: originalDoc?.contentMarkdown,
         })
 
         return {
