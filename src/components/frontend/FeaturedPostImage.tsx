@@ -31,6 +31,7 @@ export function FeaturedPostImage({ className, post, priority = false, sizes }: 
       priority={priority}
       sizes={sizes}
       src={image.url}
+      unoptimized
       width={image.width}
       height={image.height}
     />
