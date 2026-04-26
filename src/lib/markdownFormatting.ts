@@ -1,5 +1,5 @@
 const TRIPLE_FENCE_LINE =
-  /^\s*["']?```(?:\s*([A-Za-z0-9_+-]+))?\s*["']?\s*$/
+  /^\s*["']?(?:```|(?:\\`){3})(?:\s*([A-Za-z0-9_+-]+))?\s*["']?\s*$/
 
 export function normalizeMarkdownFormatting(markdown: string) {
   const lines = markdown.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n')

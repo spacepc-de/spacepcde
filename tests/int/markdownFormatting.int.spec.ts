@@ -34,4 +34,12 @@ describe('normalizeMarkdownFormatting', () => {
 
     expect(output).toBe(input)
   })
+
+  it('normalizes escaped triple-backtick fences', () => {
+    const input = ['\\`\\`\\`cpp', 'int main() { return 0; }', '\\`\\`\\`'].join('\n')
+
+    const output = normalizeMarkdownFormatting(input)
+
+    expect(output).toBe(['```cpp', 'int main() { return 0; }', '```'].join('\n'))
+  })
 })
