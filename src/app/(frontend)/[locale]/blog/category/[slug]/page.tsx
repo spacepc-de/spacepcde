@@ -122,13 +122,22 @@ export async function generateMetadata({
   }
 
   const currentPath = `/${locale}/blog/category/${category.url}`
+  const description =
+    category.description?.trim() ||
+    (locale === 'de'
+      ? `Beiträge und Anleitungen aus der Kategorie ${category.title} auf spacepc.de.`
+      : `Posts and guides from the ${category.title} category on spacepc.de.`)
 
   return {
     alternates: getExactLocalizedAlternates(locale, {
       de: locale === 'de' ? currentPath : localeSwitchHref,
       en: locale === 'en' ? currentPath : localeSwitchHref,
     }),
-    title: `Category: ${slug} | spacepc.de`,
+    description,
+    title:
+      locale === 'de'
+        ? `${category.title} | Kategorie auf spacepc.de`
+        : `${category.title} | Category on spacepc.de`,
   }
 }
 

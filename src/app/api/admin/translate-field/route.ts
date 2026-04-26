@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
+import { canAccessOpenAIAdminRoutes } from '@/lib/adminAuth'
 import { getRuntimeEnvValue } from '@/lib/runtimeEnv'
 import { getPayloadConfig } from '@/payload.config'
 
@@ -14,6 +15,42 @@ type RequestBody = {
   targetLocale?: string
   translationMode?: TranslationMode
   value?: string
+}
+
+const translatableFieldPolicy: Record<string, Record<string, TranslationMode>> = {
+  'blog-posts': {
+    contentMarkdown: 'text',
+    excerpt: 'text',
+    seoDescription: 'text',
+    seoTitle: 'text',
+    title: 'text',
+    url: 'slug',
+  },
+  'footer-links': {
+    href: 'text',
+    label: 'text',
+  },
+  'navigation-links': {
+    href: 'text',
+    label: 'text',
+  },
+  pages: {
+    contentMarkdown: 'text',
+    seoDescription: 'text',
+    seoTitle: 'text',
+    title: 'text',
+    url: 'slug',
+  },
+}
+
+function canTranslateField(collectionSlug: string, fieldName: string, mode: TranslationMode) {
+  const collectionPolicy = translatableFieldPolicy[collectionSlug]
+
+  if (!collectionPolicy) {
+    return false
+  }
+
+  return collectionPolicy[fieldName] === mode
 }
 
 const getRequiredLocalizedFieldNames = (fields: unknown[]): string[] => {
@@ -81,10 +118,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unvollständige Anfrage.' }, { status: 400 })
     }
 
-    const openAIKey = await getRuntimeEnvValue('OPENAI_API_KEY')
-
-    if (!openAIKey) {
-      return NextResponse.json({ error: 'OPENAI_API_KEY ist nicht gesetzt.' }, { status: 500 })
+    if (!canTranslateField(collectionSlug, fieldName, translationMode)) {
+      return NextResponse.json({ error: 'Feld oder Collection ist für Übersetzungen nicht freigeschaltet.' }, { status: 400 })
     }
 
     const payloadConfig = await getPayloadConfig()
@@ -95,12 +130,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nicht autorisiert.' }, { status: 401 })
     }
 
+    if (!(await canAccessOpenAIAdminRoutes(user))) {
+      return NextResponse.json({ error: 'Nicht autorisiert für KI-Aktionen.' }, { status: 403 })
+    }
+
     const collectionConfig = payloadConfig.collections.find(
       (collection) => collection.slug === collectionSlug,
     )
 
     if (!collectionConfig) {
       return NextResponse.json({ error: 'Collection nicht gefunden.' }, { status: 400 })
+    }
+
+    const openAIKey = await getRuntimeEnvValue('OPENAI_API_KEY')
+
+    if (!openAIKey) {
+      return NextResponse.json({ error: 'OPENAI_API_KEY ist nicht gesetzt.' }, { status: 500 })
     }
 
     const model = (await getRuntimeEnvValue('OPENAI_TRANSLATION_MODEL')) || 'gpt-5.2'
@@ -121,10 +166,11 @@ export async function POST(request: Request) {
 
     if (!openAIResponse.ok) {
       const errorText = await openAIResponse.text()
-      return NextResponse.json(
-        { error: `OpenAI API Fehler: ${errorText}` },
-        { status: openAIResponse.status },
-      )
+      console.error('translate-field OpenAI API error', {
+        errorText,
+        status: openAIResponse.status,
+      })
+      return NextResponse.json({ error: 'OpenAI API Fehler bei der Übersetzung.' }, { status: 502 })
     }
 
     const result = (await openAIResponse.json()) as {

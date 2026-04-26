@@ -24,8 +24,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   description:
-    'Seriöse, moderne Frontend-Oberfläche für SpacePC mit Payload-gestützter Navigation, Blog- und Produktdarstellung.',
-  title: 'spacepc.de | Systeme, Support und technische Inhalte',
+    'SpacePC bietet technische Inhalte, IT-Support und praxisnahe Anleitungen zu Linux, Infrastruktur, Hardware und smarten Systemen.',
+  title: 'spacepc.de | IT-Support, Infrastruktur und technische Inhalte',
 }
 
 export default async function LocaleRootLayout(props: {

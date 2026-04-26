@@ -49,30 +49,30 @@ const copy = {
     heroLead:
       'Anleitungen, Projekte und Lösungen rund um Linux, HomeLab, DevOps, Monitoring, Hardware und smarte Infrastruktur.',
     latestFallbackBody:
-      'Sobald weitere Blogbeiträge vorliegen, füllt sich dieser Bereich automatisch.',
-    latestFallbackTitle: 'Nach dem ersten publizierten Beitrag füllt sich diese Liste automatisch.',
+      'Weitere technische Artikel, Projekte und Praxisnotizen erscheinen gesammelt im Blog-Archiv.',
+    latestFallbackTitle: 'Im Blog-Archiv entstehen nach und nach weitere technische Beiträge.',
     latestHeading: 'Neu im Blog',
     latestLabel: 'Neu',
     notYet: 'Inhalt folgt',
-    pageTitle: 'spacepc.de | Systeme, Support und technische Inhalte',
+    pageTitle: 'spacepc.de | IT-Support, Infrastruktur und technische Inhalte',
     positionBody:
       'Die Startseite priorisiert Inhalte. Das Angebot bleibt sichtbar, aber nachgeordnet und ohne typische Landingpage-Rhetorik.',
     positionLabel: 'Einordnung',
     publishedFallback:
-      'Sobald Blogbeiträge im Backend vorliegen, erscheint hier automatisch der Leitartikel.',
+      'Im Blog stehen technische Anleitungen, Einordnungen und Projektnotizen zu Linux, Infrastruktur, Monitoring und Hardware im Mittelpunkt.',
     publishedFallbackTitle:
-      'Ein Leitartikel für die Startseite erscheint automatisch mit dem ersten Beitrag.',
+      'Technische Inhalte mit klarem Fokus auf Infrastruktur, Betrieb und praktische Lösungen.',
     request: 'Projekt anfragen',
     storyFallback: [
       {
         body: 'Die Startseite priorisiert Inhalte und hält die Wege kurz.',
-        meta: 'Beispiel / 3 Min.',
-        title: 'Ein ruhiger Einstieg statt Agenturtext.',
+        meta: 'Überblick / 3 Min.',
+        title: 'Technische Inhalte statt leerer Landingpage-Rhetorik.',
       },
       {
         body: 'Archiv, Kategorien und einzelne Beiträge bleiben direkt erreichbar.',
-        meta: 'Beispiel / 2 Min.',
-        title: 'Das Frontend ordnet Inhalte statt sie zu übertönen.',
+        meta: 'Überblick / 2 Min.',
+        title: 'Klare Wege zu Archiv, Kategorien und einzelnen Beiträgen.',
       },
     ],
     storyHeading: 'Im Fokus',
@@ -94,30 +94,30 @@ const copy = {
     heroLead:
       'Guides, projects, and solutions around Linux, homelab, DevOps, monitoring, hardware, and smart infrastructure.',
     latestFallbackBody:
-      'As soon as more posts are published, this area fills automatically.',
-    latestFallbackTitle: 'After the first published post, this list fills automatically.',
+      'More technical articles, project notes, and practical guides will continue to appear in the blog archive.',
+    latestFallbackTitle: 'The blog archive will keep expanding with additional technical posts.',
     latestHeading: 'New in the blog',
     latestLabel: 'New',
     notYet: 'Content coming soon',
-    pageTitle: 'spacepc.de | Systems, support, and technical content',
+    pageTitle: 'spacepc.de | IT support, infrastructure, and technical content',
     positionBody:
       'The homepage prioritises content. Services remain visible, but secondary and without typical landing-page rhetoric.',
     positionLabel: 'Editorial note',
     publishedFallback:
-      'As soon as blog posts exist in the backend, the lead story appears here automatically.',
+      'The blog focuses on technical guides, infrastructure work, monitoring, hardware, and practical operational knowledge.',
     publishedFallbackTitle:
-      'A lead article for the homepage appears automatically with the first post.',
+      'Technical content with a clear focus on infrastructure, operations, and practical solutions.',
     request: 'Start a project',
     storyFallback: [
       {
         body: 'The homepage prioritises content and keeps the paths short.',
-        meta: 'Example / 3 min.',
-        title: 'A calmer entry point instead of agency copy.',
+        meta: 'Overview / 3 min.',
+        title: 'Technical content instead of empty landing-page language.',
       },
       {
         body: 'Archive, categories, and posts stay directly accessible.',
-        meta: 'Example / 2 min.',
-        title: 'The frontend organises content instead of talking over it.',
+        meta: 'Overview / 2 min.',
+        title: 'Clear paths to the archive, categories, and individual posts.',
       },
     ],
     storyHeading: 'In focus',
@@ -176,8 +176,8 @@ export async function generateMetadata({
     alternates: getLocalizedAlternates(locale),
     description:
       locale === 'de'
-        ? 'IT Service, technische Inhalte und Produktbezug auf einer schnellen, klar strukturierten SpacePC-Website.'
-        : 'IT service, technical content, and product context on a fast, clearly structured SpacePC website.',
+        ? 'SpacePC bündelt IT-Support, Infrastrukturwissen und technische Artikel zu Linux, Monitoring, Hardware und smarten Systemen.'
+        : 'SpacePC combines IT support, infrastructure knowledge, and technical articles on Linux, monitoring, hardware, and smart systems.',
     title: copy[locale].pageTitle,
   }
 }

@@ -120,13 +120,18 @@ export async function generateMetadata({
   }
 
   const currentPath = `/${locale}/blog/tag/${tag.url}`
+  const description =
+    locale === 'de'
+      ? `Beiträge, Projekte und Hinweise mit dem Tag ${tag.title} auf spacepc.de.`
+      : `Posts, projects, and notes tagged ${tag.title} on spacepc.de.`
 
   return {
     alternates: getExactLocalizedAlternates(locale, {
       de: locale === 'de' ? currentPath : localeSwitchHref,
       en: locale === 'en' ? currentPath : localeSwitchHref,
     }),
-    title: `Tag: ${slug} | spacepc.de`,
+    description,
+    title: locale === 'de' ? `${tag.title} | Tag auf spacepc.de` : `${tag.title} | Tag on spacepc.de`,
   }
 }
 

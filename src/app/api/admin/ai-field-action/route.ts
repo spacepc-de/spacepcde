@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
+import { canAccessOpenAIAdminRoutes } from '@/lib/adminAuth'
 import { syncBlogContent } from '@/lib/blogContent'
 import { getRuntimeEnvValue } from '@/lib/runtimeEnv'
 import { getPayloadConfig } from '@/payload.config'
@@ -29,6 +30,11 @@ type ResponsesAPIResult = {
 
 const SEO_TITLE_MAX = 60
 const SEO_DESCRIPTION_MAX = 155
+
+const actionCollectionPolicy: Record<Action, Set<string>> = {
+  generateSeo: new Set(['blog-posts', 'pages']),
+  rewriteMarkdown: new Set(['blog-posts', 'pages']),
+}
 
 function clampSeoText(value: string, maxLength: number) {
   const normalized = value.replace(/\s+/g, ' ').trim()
@@ -76,7 +82,11 @@ async function runOpenAI({
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`OpenAI API Fehler: ${errorText}`)
+    console.error('ai-field-action OpenAI API error', {
+      errorText,
+      status: response.status,
+    })
+    throw new Error('OpenAI API Anfrage fehlgeschlagen.')
   }
 
   const result = (await response.json()) as ResponsesAPIResult
@@ -100,10 +110,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unvollständige Anfrage.' }, { status: 400 })
     }
 
-    const openAIKey = await getRuntimeEnvValue('OPENAI_API_KEY')
-
-    if (!openAIKey) {
-      return NextResponse.json({ error: 'OPENAI_API_KEY ist nicht gesetzt.' }, { status: 500 })
+    if (!actionCollectionPolicy[action].has(collectionSlug)) {
+      return NextResponse.json({ error: 'Collection ist für diese KI-Aktion nicht freigeschaltet.' }, { status: 400 })
     }
 
     const payloadConfig = await getPayloadConfig()
@@ -112,6 +120,16 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json({ error: 'Nicht autorisiert.' }, { status: 401 })
+    }
+
+    if (!(await canAccessOpenAIAdminRoutes(user))) {
+      return NextResponse.json({ error: 'Nicht autorisiert für KI-Aktionen.' }, { status: 403 })
+    }
+
+    const openAIKey = await getRuntimeEnvValue('OPENAI_API_KEY')
+
+    if (!openAIKey) {
+      return NextResponse.json({ error: 'OPENAI_API_KEY ist nicht gesetzt.' }, { status: 500 })
     }
 
     if (action === 'generateSeo') {

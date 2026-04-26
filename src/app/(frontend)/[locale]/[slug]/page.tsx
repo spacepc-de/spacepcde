@@ -29,6 +29,47 @@ import { renderMarkdownToHtml } from '@/lib/markdown'
 
 export const revalidate = 21600
 
+function normalizeSeoText(value: string, maxLength: number) {
+  const normalized = value.replace(/\s+/g, ' ').trim()
+
+  if (normalized.length <= maxLength) {
+    return normalized
+  }
+
+  const shortened = normalized.slice(0, maxLength + 1)
+  const lastSpace = shortened.lastIndexOf(' ')
+
+  if (lastSpace >= Math.floor(maxLength * 0.7)) {
+    return shortened.slice(0, lastSpace).trim()
+  }
+
+  return normalized.slice(0, maxLength).trim()
+}
+
+function buildEntryDescription(entry: FrontendEntry, locale: LocaleCode) {
+  if (entry.seoDescription?.trim()) {
+    return entry.seoDescription.trim()
+  }
+
+  if (entry.kind === 'post') {
+    if (entry.excerpt?.trim()) {
+      return normalizeSeoText(entry.excerpt, 155)
+    }
+
+    if (entry.contentMarkdown?.trim()) {
+      return normalizeSeoText(entry.contentMarkdown.replace(/[#>*_`[\]\-]+/g, ' '), 155)
+    }
+
+    return locale === 'de' ? `${entry.title} auf spacepc.de lesen.` : `Read ${entry.title} on spacepc.de.`
+  }
+
+  if (entry.contentMarkdown?.trim()) {
+    return normalizeSeoText(entry.contentMarkdown.replace(/[#>*_`[\]\-]+/g, ' '), 155)
+  }
+
+  return locale === 'de' ? `${entry.title} auf spacepc.de.` : `${entry.title} on spacepc.de.`
+}
+
 function getTargetLocale(locale: LocaleCode): LocaleCode {
   return locale === 'de' ? 'en' : 'de'
 }
@@ -220,7 +261,7 @@ export async function generateMetadata({
 
   if (!entry) {
     return {
-      title: 'Page not found | spacepc.de',
+      title: locale === 'de' ? 'Seite nicht gefunden | spacepc.de' : 'Page not found | spacepc.de',
     }
   }
 
@@ -229,9 +270,7 @@ export async function generateMetadata({
       de: locale === 'de' ? `/${locale}/${entry.url}` : localeSwitchHref,
       en: locale === 'en' ? `/${locale}/${entry.url}` : localeSwitchHref,
     }),
-    description:
-      entry.seoDescription ||
-      (locale === 'de' ? `${entry.title} auf spacepc.de` : `${entry.title} on spacepc.de`),
+    description: buildEntryDescription(entry, locale),
     title: entry.seoTitle || `${entry.title} | spacepc.de`,
   }
 }
