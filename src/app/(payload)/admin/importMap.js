@@ -1,3 +1,5 @@
+import { GenerateSlugButton as GenerateSlugButton_5c346ab5e959e889523dc90d34744381 } from '../../../components/admin/GenerateSlugButton'
+import { TranslateAllButton as TranslateAllButton_1416bed83b550efde3278f5ce9a91f09 } from '../../../components/admin/TranslateAllButton'
 import { TranslateFieldButton as TranslateFieldButton_8b41d6583853aca30c1702ebef0a4722 } from '../../../components/admin/TranslateFieldButton'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -24,13 +26,14 @@ import { UploadFeatureClient as UploadFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { FixedToolbarFeatureClient as FixedToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { AIFieldButton as AIFieldButton_e65b55d36829ffa0234644443cdea768 } from '../../../components/admin/AIFieldButton'
-import { GenerateSlugButton as GenerateSlugButton_4ffac1e2ab527c066567fd52d070ecf9 } from '../../../components/admin/GenerateSlugButton'
-import { SeoAIActions as SeoAIActions_3f72a4e8fb88f2641e6f0d1041c2bdab } from '../../../components/admin/SeoAIActions'
-import { TranslateAllButton as TranslateAllButton_2f34f37b6197b80468f5f5d1f53076a6 } from '../../../components/admin/TranslateAllButton'
+import { MarkdownFormatAction as MarkdownFormatAction_ce53c2a852b10e52718380131f0adcee } from '../../../components/admin/MarkdownFormatAction'
+import { SeoAIActions as SeoAIActions_c9f37bb844c9ec8afbecb34a81d0fbb6 } from '../../../components/admin/SeoAIActions'
 import { R2ClientUploadHandler as R2ClientUploadHandler_85cc02ed84006fcc91d3aff39dda669d } from '@payloadcms/storage-r2/client'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
+  "./components/admin/GenerateSlugButton#GenerateSlugButton": GenerateSlugButton_5c346ab5e959e889523dc90d34744381,
+  "./components/admin/TranslateAllButton#TranslateAllButton": TranslateAllButton_1416bed83b550efde3278f5ce9a91f09,
   "./components/admin/TranslateFieldButton#TranslateFieldButton": TranslateFieldButton_8b41d6583853aca30c1702ebef0a4722,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -57,9 +60,8 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#FixedToolbarFeatureClient": FixedToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "./components/admin/AIFieldButton#AIFieldButton": AIFieldButton_e65b55d36829ffa0234644443cdea768,
-  "./components/admin/GenerateSlugButton#GenerateSlugButton": GenerateSlugButton_4ffac1e2ab527c066567fd52d070ecf9,
-  "./components/admin/SeoAIActions#SeoAIActions": SeoAIActions_3f72a4e8fb88f2641e6f0d1041c2bdab,
-  "./components/admin/TranslateAllButton#TranslateAllButton": TranslateAllButton_2f34f37b6197b80468f5f5d1f53076a6,
+  "./components/admin/MarkdownFormatAction#MarkdownFormatAction": MarkdownFormatAction_ce53c2a852b10e52718380131f0adcee,
+  "./components/admin/SeoAIActions#SeoAIActions": SeoAIActions_c9f37bb844c9ec8afbecb34a81d0fbb6,
   "@payloadcms/storage-r2/client#R2ClientUploadHandler": R2ClientUploadHandler_85cc02ed84006fcc91d3aff39dda669d,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }
