@@ -1120,6 +1120,22 @@ main {
   padding: 2rem 0 0;
 }
 
+.related-posts {
+  padding: 2rem 0 0;
+}
+
+.related-posts__heading {
+  margin-bottom: 1rem;
+}
+
+.related-posts__list {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.related-posts__card {
+  padding: 1.5rem;
+}
+
 .comments-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

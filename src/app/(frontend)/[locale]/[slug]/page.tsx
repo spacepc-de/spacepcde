@@ -8,6 +8,7 @@ import { FeaturedPostImage } from '@/components/frontend/FeaturedPostImage'
 import { FrontendHeader } from '@/components/frontend/FrontendHeader'
 import { PostComments } from '@/components/frontend/PostComments'
 import {
+  buildPostSummary,
   formatBlogDate,
   getCategoryHref,
   getFeaturedImage,
@@ -28,6 +29,41 @@ import {
 import { renderMarkdownToHtml } from '@/lib/markdown'
 
 export const revalidate = 21600
+const RELATED_POST_LIMIT = 4
+const RELATED_CATEGORY_WEIGHT = 4
+const RELATED_TAG_WEIGHT = 3
+
+function getRelationIds(
+  value: FrontendBlogPost['categories'] | FrontendBlogPost['tags'],
+) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const ids = new Set<number>()
+
+  for (const relation of value) {
+    if (typeof relation === 'number') {
+      ids.add(relation)
+      continue
+    }
+
+    if (typeof relation === 'object' && relation !== null && typeof relation.id === 'number') {
+      ids.add(relation.id)
+    }
+  }
+
+  return [...ids]
+}
+
+function toTimestamp(value: string | null | undefined) {
+  if (!value) {
+    return 0
+  }
+
+  const timestamp = Date.parse(value)
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
 
 function normalizeSeoText(value: string, maxLength: number) {
   const normalized = value.replace(/\s+/g, ' ').trim()
@@ -125,6 +161,71 @@ type FrontendBlogPost = {
 type FrontendEntry =
   | ({ kind: 'page' } & FrontendPage)
   | ({ kind: 'post' } & FrontendBlogPost)
+
+async function getRelatedPosts(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  locale: LocaleCode,
+  post: FrontendBlogPost,
+) {
+  const sourceCategoryIds = new Set(getRelationIds(post.categories))
+  const sourceTagIds = new Set(getRelationIds(post.tags))
+
+  const taxonomyMatches = [
+    ...Array.from(sourceCategoryIds).map((id) => ({
+      categories: {
+        equals: id,
+      },
+    })),
+    ...Array.from(sourceTagIds).map((id) => ({
+      tags: {
+        equals: id,
+      },
+    })),
+  ]
+
+  if (taxonomyMatches.length === 0) {
+    return []
+  }
+
+  const relatedResult = await payload.find({
+    collection: 'blog-posts' as never,
+    depth: 2,
+    fallbackLocale: 'de',
+    limit: 36,
+    locale,
+    sort: '-publishedAt',
+    where: {
+      and: [
+        {
+          status: {
+            equals: 'published',
+          },
+        },
+        {
+          or: taxonomyMatches,
+        },
+      ],
+    } as never,
+  })
+
+  return (relatedResult.docs as FrontendBlogPost[])
+    .filter((candidate) => candidate.id !== post.id && candidate.url && candidate.title)
+    .map((candidate) => {
+      const sharedCategories = getRelationIds(candidate.categories).filter((id) =>
+        sourceCategoryIds.has(id),
+      ).length
+      const sharedTags = getRelationIds(candidate.tags).filter((id) => sourceTagIds.has(id)).length
+      const score = sharedCategories * RELATED_CATEGORY_WEIGHT + sharedTags * RELATED_TAG_WEIGHT
+
+      return {
+        ...candidate,
+        score,
+      }
+    })
+    .filter((candidate) => candidate.score > 0)
+    .sort((a, b) => b.score - a.score || toTimestamp(b.publishedAt) - toTimestamp(a.publishedAt))
+    .slice(0, RELATED_POST_LIMIT)
+}
 
 const getEntryBySlug = cache(async (locale: LocaleCode, slug: string) => {
   const payload = await getPayload({ config: await getPayloadConfig() })
@@ -294,6 +395,7 @@ export default async function LocalizedStaticPage({
 
   const payload = await getPayload({ config: await getPayloadConfig() })
   const comments = entry.kind === 'post' ? await getApprovedCommentsForPost(payload, entry.id) : []
+  const relatedPosts = entry.kind === 'post' ? await getRelatedPosts(payload, locale, entry) : []
 
   const featuredImage = entry.kind === 'post' ? getFeaturedImage(entry) : null
   const productGroups =
@@ -306,6 +408,50 @@ export default async function LocalizedStaticPage({
       key: `${group.id}-${product.id ?? product.productName}`,
     })),
   )
+  const relatedPostsSection =
+    entry.kind === 'post' && relatedPosts.length > 0 ? (
+      <section className="related-posts section">
+        <div className="section-heading related-posts__heading">
+          <p className="eyebrow">{locale === 'de' ? 'Empfohlen' : 'Recommended'}</p>
+          <h2>{locale === 'de' ? 'Ähnliche Beiträge' : 'Related posts'}</h2>
+        </div>
+
+        <div className="blog-list related-posts__list">
+          {relatedPosts.map((relatedPost) => (
+            <article className="blog-list-card related-posts__card" key={relatedPost.id}>
+              {getFeaturedImage(relatedPost) ? (
+                <FeaturedPostImage
+                  className="card-preview card-preview--list"
+                  post={relatedPost}
+                  sizes="(max-width: 900px) 100vw, 66vw"
+                />
+              ) : null}
+              <p className="story-meta">{formatBlogDate(relatedPost.publishedAt, locale)}</p>
+              <h2>
+                <Link href={`/${locale}/${relatedPost.url}`}>{relatedPost.title}</Link>
+              </h2>
+              <p>{buildPostSummary(relatedPost)}</p>
+              <div className="blog-card__taxonomy">
+                {isPopulatedCategory(relatedPost.categories)
+                  ? relatedPost.categories.slice(0, 2).map((category) => (
+                      <Link className="tag-pill" href={getCategoryHref(locale, category.url)} key={`cat-${relatedPost.id}-${category.id}`}>
+                        {category.title}
+                      </Link>
+                    ))
+                  : null}
+                {isPopulatedTag(relatedPost.tags)
+                  ? relatedPost.tags.slice(0, 2).map((tag) => (
+                      <Link className="tag-pill tag-pill--neutral" href={getTagHref(locale, tag.url)} key={`tag-${relatedPost.id}-${tag.id}`}>
+                        #{tag.title}
+                      </Link>
+                    ))
+                  : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    ) : null
 
   return (
     <div className="site-shell">
@@ -438,9 +584,13 @@ export default async function LocalizedStaticPage({
           ) : null}
         </section>
 
+        {entry.kind === 'post' && comments.length === 0 ? relatedPostsSection : null}
+
         {entry.kind === 'post' ? (
           <PostComments initialComments={comments} locale={locale} postId={entry.id} />
         ) : null}
+
+        {entry.kind === 'post' && comments.length > 0 ? relatedPostsSection : null}
       </main>
 
       <footer className="site-footer">

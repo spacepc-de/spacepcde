@@ -40,27 +40,6 @@ export const BlogPosts: CollectionConfig = {
         }
       },
     ],
-    beforeValidate: [
-      async ({ data, originalDoc, req }) => {
-        if (!data) {
-          return data
-        }
-
-        const syncedContent = await syncBlogContent({
-          config: req.payload.config,
-          content: data.content,
-          contentMarkdown: data.contentMarkdown,
-          originalContent: originalDoc?.content,
-          originalContentMarkdown: originalDoc?.contentMarkdown,
-        })
-
-        return {
-          ...data,
-          content: syncedContent.content,
-          contentMarkdown: syncedContent.contentMarkdown,
-        }
-      },
-    ],
     beforeChange: [
       ({ data, originalDoc }) => {
         if (!data) {
@@ -141,6 +120,15 @@ export const BlogPosts: CollectionConfig = {
         {
           label: 'Markdown',
           fields: [
+            {
+              name: 'markdownActions',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: './components/admin/MarkdownFormatAction#MarkdownFormatAction',
+                },
+              },
+            },
             withTranslationButton({
               name: 'contentMarkdown',
               type: 'code',
@@ -148,7 +136,7 @@ export const BlogPosts: CollectionConfig = {
               admin: {
                 language: 'markdown',
                 description:
-                  'Alternativ den Inhalt direkt als Markdown bearbeiten. Beim Speichern wird automatisch in den Editor synchronisiert.',
+                  'Alternativ den Inhalt direkt als Markdown bearbeiten. Über den Button oben kannst du Markdown formatieren und den Editor manuell synchronisieren.',
               },
             }),
           ],
