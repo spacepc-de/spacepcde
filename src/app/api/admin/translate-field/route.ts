@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
 import { canAccessOpenAIAdminRoutes } from '@/lib/adminAuth'
+import { isAdminAIRateLimited } from '@/lib/adminAiRateLimit'
 import { getRuntimeEnvValue } from '@/lib/runtimeEnv'
 import { getPayloadConfig } from '@/payload.config'
 
@@ -16,6 +17,8 @@ type RequestBody = {
   translationMode?: TranslationMode
   value?: string
 }
+
+const OPENAI_REQUEST_TIMEOUT_MS = 20_000
 
 const translatableFieldPolicy: Record<string, Record<string, TranslationMode>> = {
   'blog-posts': {
@@ -134,6 +137,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nicht autorisiert für KI-Aktionen.' }, { status: 403 })
     }
 
+    if (await isAdminAIRateLimited(request, user)) {
+      return NextResponse.json(
+        { error: 'Zu viele KI-Anfragen in kurzer Zeit. Bitte später erneut versuchen.' },
+        { status: 429 },
+      )
+    }
+
     const collectionConfig = payloadConfig.collections.find(
       (collection) => collection.slug === collectionSlug,
     )
@@ -151,18 +161,36 @@ export async function POST(request: Request) {
     const model = (await getRuntimeEnvValue('OPENAI_TRANSLATION_MODEL')) || 'gpt-5.2'
     const instructions = translationInstructionsByMode[translationMode]
 
-    const openAIResponse = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        instructions,
-        input: `Translate from ${sourceLocale} to ${targetLocale}:\n\n${value}`,
-      }),
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), OPENAI_REQUEST_TIMEOUT_MS)
+    let openAIResponse: Response
+
+    try {
+      openAIResponse = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          instructions,
+          input: `Translate from ${sourceLocale} to ${targetLocale}:\n\n${value}`,
+        }),
+        signal: controller.signal,
+      })
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return NextResponse.json(
+          { error: 'OpenAI API Anfrage hat das Timeout überschritten.' },
+          { status: 504 },
+        )
+      }
+
+      throw error
+    } finally {
+      clearTimeout(timeout)
+    }
 
     if (!openAIResponse.ok) {
       const errorText = await openAIResponse.text()

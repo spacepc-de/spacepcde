@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
 import { canAccessOpenAIAdminRoutes } from '@/lib/adminAuth'
+import { isAdminAIRateLimited } from '@/lib/adminAiRateLimit'
 import { syncBlogContent } from '@/lib/blogContent'
 import { getRuntimeEnvValue } from '@/lib/runtimeEnv'
 import { getPayloadConfig } from '@/payload.config'
@@ -30,6 +31,7 @@ type ResponsesAPIResult = {
 
 const SEO_TITLE_MAX = 60
 const SEO_DESCRIPTION_MAX = 155
+const OPENAI_REQUEST_TIMEOUT_MS = 20_000
 
 const actionCollectionPolicy: Record<Action, Set<string>> = {
   generateSeo: new Set(['blog-posts', 'pages']),
@@ -67,18 +69,33 @@ async function runOpenAI({
     throw new Error('OPENAI_API_KEY ist nicht gesetzt.')
   }
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      instructions,
-      input,
-    }),
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), OPENAI_REQUEST_TIMEOUT_MS)
+  let response: Response
+
+  try {
+    response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        instructions,
+        input,
+      }),
+      signal: controller.signal,
+    })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('OpenAI API Anfrage hat das Timeout überschritten.')
+    }
+
+    throw error
+  } finally {
+    clearTimeout(timeout)
+  }
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -106,8 +123,12 @@ export async function POST(request: Request) {
     const body = (await request.json()) as RequestBody
     const { action, collectionSlug, id, input, locale = 'de' } = body
 
-    if (!action || !collectionSlug || !id || !input) {
+    if (!collectionSlug || !id || !input) {
       return NextResponse.json({ error: 'Unvollständige Anfrage.' }, { status: 400 })
+    }
+
+    if (action !== 'generateSeo' && action !== 'rewriteMarkdown') {
+      return NextResponse.json({ error: 'Unbekannte Aktion.' }, { status: 400 })
     }
 
     if (!actionCollectionPolicy[action].has(collectionSlug)) {
@@ -124,6 +145,13 @@ export async function POST(request: Request) {
 
     if (!(await canAccessOpenAIAdminRoutes(user))) {
       return NextResponse.json({ error: 'Nicht autorisiert für KI-Aktionen.' }, { status: 403 })
+    }
+
+    if (await isAdminAIRateLimited(request, user)) {
+      return NextResponse.json(
+        { error: 'Zu viele KI-Anfragen in kurzer Zeit. Bitte später erneut versuchen.' },
+        { status: 429 },
+      )
     }
 
     const openAIKey = await getRuntimeEnvValue('OPENAI_API_KEY')
@@ -220,6 +248,10 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unbekannter Fehler'
     console.error('ai-field-action failed', error)
+
+    if (message === 'OpenAI API Anfrage hat das Timeout überschritten.') {
+      return NextResponse.json({ error: message }, { status: 504 })
+    }
 
     return NextResponse.json({ error: `KI-Aktion fehlgeschlagen: ${message}` }, { status: 500 })
   }

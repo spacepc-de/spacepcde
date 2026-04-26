@@ -7,6 +7,8 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 
+import { normalizeMarkdownFormatting } from './markdownFormatting'
+
 export const blogContentEditor = lexicalEditor({
   features: ({ defaultFeatures }) => [
     FixedToolbarFeature(),
@@ -59,17 +61,21 @@ export const syncBlogContent = async ({
     String(contentMarkdown ?? '') !== String(originalContentMarkdown ?? '')
 
   if (contentChanged && !markdownChanged && isLexicalContent(content)) {
-    return {
-      content,
-      contentMarkdown: convertLexicalToMarkdown({
+    const normalizedMarkdown = normalizeMarkdownFormatting(
+      convertLexicalToMarkdown({
         data: content as never,
         editorConfig,
       }),
+    )
+
+    return {
+      content,
+      contentMarkdown: normalizedMarkdown,
     }
   }
 
   if (typeof contentMarkdown === 'string') {
-    const normalizedMarkdown = contentMarkdown.trim()
+    const normalizedMarkdown = normalizeMarkdownFormatting(contentMarkdown.trim())
 
     if (normalizedMarkdown && (markdownChanged || !isLexicalContent(content))) {
       return {
@@ -77,28 +83,34 @@ export const syncBlogContent = async ({
           editorConfig,
           markdown: normalizedMarkdown,
         }),
-        contentMarkdown,
+        contentMarkdown: normalizedMarkdown,
       }
     }
   }
 
   if (isLexicalContent(content)) {
-    return {
-      content,
-      contentMarkdown: convertLexicalToMarkdown({
+    const normalizedMarkdown = normalizeMarkdownFormatting(
+      convertLexicalToMarkdown({
         data: content as never,
         editorConfig,
       }),
+    )
+
+    return {
+      content,
+      contentMarkdown: normalizedMarkdown,
     }
   }
 
   if (typeof content === 'string' && content.trim()) {
+    const normalizedMarkdown = normalizeMarkdownFormatting(content)
+
     return {
       content: convertMarkdownToLexical({
         editorConfig,
-        markdown: content,
+        markdown: normalizedMarkdown,
       }),
-      contentMarkdown: content,
+      contentMarkdown: normalizedMarkdown,
     }
   }
 

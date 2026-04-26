@@ -92,7 +92,11 @@ async function takePersistentRateLimitToken(key: string, maxRequests: number, wi
   }
 }
 
-export async function isCommentRateLimited(key: string, maxRequests: number, windowMs: number) {
+export async function isRateLimited(key: string, maxRequests: number, windowMs: number) {
   const result = await takePersistentRateLimitToken(key, maxRequests, windowMs)
   return result.limited
+}
+
+export async function isCommentRateLimited(key: string, maxRequests: number, windowMs: number) {
+  return isRateLimited(key, maxRequests, windowMs)
 }
