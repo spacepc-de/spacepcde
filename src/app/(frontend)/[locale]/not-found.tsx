@@ -1,16 +1,25 @@
 import type { Metadata } from 'next'
 
 import { FrontendNotFoundPage } from '@/components/frontend/FrontendNotFoundPage'
-import { isLocaleCode } from '@/lib/frontend'
+import type { LocaleCode } from '@/lib/frontend'
 
 type Args = {
-  params: Promise<{
-    locale: string
+  params?: Promise<{
+    locale?: string
   }>
 }
 
+async function resolveLocale(params: Args['params']): Promise<LocaleCode> {
+  const locale = (await params)?.locale
+  if (locale === 'de' || locale === 'en') {
+    return locale
+  }
+
+  return 'de'
+}
+
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
-  const { locale } = await params
+  const locale = await resolveLocale(params)
   const isEnglish = locale === 'en'
 
   return {
@@ -26,7 +35,6 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
 }
 
 export default async function LocaleNotFound({ params }: Args) {
-  const { locale } = await params
-
-  return <FrontendNotFoundPage locale={isLocaleCode(locale) ? locale : 'de'} />
+  const locale = await resolveLocale(params)
+  return <FrontendNotFoundPage locale={locale} />
 }
