@@ -1,7 +1,6 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 type RuntimeEnv = {
-  OPENAI_ADMIN_EMAIL_ALLOWLIST?: string
   OPENAI_API_KEY?: string
   OPENAI_TRANSLATION_MODEL?: string
 }
