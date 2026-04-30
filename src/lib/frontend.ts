@@ -22,6 +22,33 @@ export function getFallbackNavItems(locale: LocaleCode): LinkItem[] {
     },
     { href: `/${locale}#wissen`, label: 'Blog', openInNewTab: false },
     {
+      children: [
+        {
+          href: '/tools/netplan-generator',
+          label: locale === 'de' ? 'Netplan Generator' : 'Netplan Generator',
+          openInNewTab: false,
+        },
+        {
+          href: '/tools/netplan-static-ip-generator',
+          label: locale === 'de' ? 'Static IP Generator' : 'Static IP Generator',
+          openInNewTab: false,
+        },
+        {
+          href: '/tools/netplan-bridge-generator',
+          label: locale === 'de' ? 'Bridge Generator' : 'Bridge Generator',
+          openInNewTab: false,
+        },
+        {
+          href: '/tools/netplan-vlan-generator',
+          label: locale === 'de' ? 'VLAN Generator' : 'VLAN Generator',
+          openInNewTab: false,
+        },
+      ],
+      href: `/${locale}/tools`,
+      label: locale === 'de' ? 'Tools' : 'Tools',
+      openInNewTab: false,
+    },
+    {
       href: `/${locale}#produkte`,
       label: locale === 'de' ? 'Angebot' : 'Offer',
       openInNewTab: false,

@@ -1120,6 +1120,396 @@ main {
   padding: 2rem 0 0;
 }
 
+.tools-page {
+  padding-bottom: 2rem;
+}
+
+.tool-hero {
+  padding: 0.5rem 0 1.5rem;
+}
+
+.tool-card {
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.tool-hero__copy {
+  padding: 1.8rem;
+  background:
+    radial-gradient(circle at top right, rgba(123, 182, 255, 0.14), transparent 28%),
+    radial-gradient(circle at left 15%, rgba(53, 214, 182, 0.12), transparent 24%),
+    var(--surface);
+}
+
+.tool-hero__copy h1,
+.tool-copy-card h2,
+.tool-catalog-card h2,
+.tool-builder__panel-head h2,
+.tool-interface-card h3 {
+  margin: 0;
+  letter-spacing: -0.04em;
+  line-height: 1.03;
+}
+
+.tool-hero__copy h1 {
+  font-size: clamp(2.6rem, 4.2vw, 4.6rem);
+}
+
+.tool-hero__lead,
+.tool-hero__sublead,
+.tool-section__lead,
+.tool-copy-card p,
+.tool-faq__item p,
+.tool-related-link span,
+.tool-catalog-card p,
+.tool-preview-card__body p {
+  color: var(--ink-soft);
+  line-height: 1.75;
+}
+
+.tool-hero__lead {
+  max-width: 60rem;
+  margin: 1rem 0 0;
+  font-size: 1.05rem;
+}
+
+.tool-hero__sublead {
+  margin: 1rem 0 0;
+}
+
+.tool-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1.3rem;
+}
+
+.tool-section {
+  padding-top: 0;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.tool-grid--catalog {
+  padding-top: 0;
+}
+
+.tool-copy-card,
+.tool-catalog-card {
+  padding: 1.5rem;
+}
+
+.tool-copy-card__list {
+  margin: 1rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.tool-copy-card__list li,
+.tool-status li {
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.tool-builder {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.tool-builder__controls,
+.tool-interface-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.tool-builder__panel,
+.tool-preview-card,
+.tool-interface-card {
+  padding: 1.4rem;
+}
+
+.tool-builder__panel-head,
+.tool-interface-card__head,
+.tool-preview-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tool-builder__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tool-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.tool-field-grid--top {
+  margin-top: 1.25rem;
+}
+
+.tool-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.tool-field--full {
+  grid-column: 1 / -1;
+}
+
+.tool-field span,
+.tool-checkbox span,
+.tool-field small {
+  color: var(--ink-soft);
+}
+
+.tool-field input,
+.tool-field select,
+.chip-editor__input-row input {
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font: inherit;
+}
+
+.tool-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.tool-toggle,
+.tool-link-button,
+.chip-editor__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.72rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.tool-toggle:hover,
+.tool-link-button:hover,
+.chip-editor__chip:hover,
+.tool-related-link:hover,
+.tool-catalog-card:hover {
+  transform: translateY(-1px);
+}
+
+.tool-toggle--active {
+  border-color: color-mix(in srgb, var(--sky) 55%, var(--line));
+  background: rgba(123, 182, 255, 0.12);
+  color: var(--sky);
+}
+
+.chip-editor {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.chip-editor__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.chip-editor__chip {
+  color: var(--ink-soft);
+}
+
+.chip-editor__input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem;
+}
+
+.tool-checkboxes {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.tool-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tool-checkbox input {
+  accent-color: var(--sky);
+}
+
+.tool-builder__preview {
+  position: sticky;
+  top: 5.5rem;
+}
+
+.tool-preview-card__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.tool-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.tool-tab {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tool-tab--active {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tool-preview-card__code {
+  margin: 1rem 0 0;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(10, 15, 24, 0.94);
+}
+
+.tool-preview-card__code code {
+  display: block;
+  color: rgba(244, 247, 251, 0.94);
+  font-family: var(--font-mono);
+  font-size: 0.91rem;
+  line-height: 1.7;
+  white-space: pre;
+}
+
+.tool-preview-card__body {
+  margin-top: 1rem;
+}
+
+.tool-status {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+}
+
+.tool-status strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.tool-status ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.tool-status--error {
+  border: 1px solid rgba(255, 138, 76, 0.32);
+  background: rgba(255, 138, 76, 0.08);
+}
+
+.tool-status--warning {
+  border: 1px solid rgba(123, 182, 255, 0.26);
+  background: rgba(123, 182, 255, 0.08);
+}
+
+.tool-faq {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.tool-faq__item {
+  border: 1px solid var(--line-soft);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.95rem 1rem;
+}
+
+.tool-faq__item summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tool-faq__item p {
+  margin: 0.8rem 0 0;
+}
+
+.tool-related-links {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.tool-related-link,
+.tool-catalog-card {
+  display: grid;
+  gap: 0.45rem;
+  text-decoration: none;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.tool-related-link {
+  padding: 1rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tool-related-link strong,
+.tool-catalog-card__cta {
+  color: var(--ink);
+}
+
+.tool-catalog-card__cta {
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
 .related-posts {
   padding: 2rem 0 0;
 }
@@ -1233,6 +1623,15 @@ main {
 }
 
 @media (max-width: 1080px) {
+  .tool-grid,
+  .tool-builder {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-builder__preview {
+    position: static;
+  }
+
   .blog-layout {
     grid-template-columns: 1fr;
   }
@@ -1270,6 +1669,31 @@ main {
 }
 
 @media (max-width: 720px) {
+  .tool-builder__panel,
+  .tool-preview-card,
+  .tool-interface-card,
+  .tool-hero__copy,
+  .tool-copy-card,
+  .tool-catalog-card {
+    padding: 1.2rem;
+  }
+
+  .tool-builder__panel-head,
+  .tool-interface-card__head,
+  .tool-preview-card__head {
+    flex-direction: column;
+  }
+
+  .tool-field-grid,
+  .tool-checkboxes,
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chip-editor__input-row {
+    grid-template-columns: 1fr;
+  }
+
   .section,
   .site-nav,
   .site-footer__content {

@@ -4,6 +4,7 @@ import type { Payload } from 'payload'
 
 import { SITE_URL, type LocaleCode } from '@/lib/frontend'
 import { getPayloadConfig } from '@/payload.config'
+import { NETPLAN_TOOL_SLUGS } from '@/lib/netplan'
 import type { BlogPost, Category, Page, Tag } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
@@ -76,6 +77,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const locale of LOCALES) {
     entries.push(toSitemapEntry(`/${locale}`, locale))
     entries.push(toSitemapEntry(`/${locale}/blog`, locale))
+    entries.push(toSitemapEntry(`/${locale}/tools`, locale))
+
+    for (const tool of NETPLAN_TOOL_SLUGS) {
+      entries.push(toSitemapEntry(`/${locale}/tools/${tool}`, locale))
+    }
 
     const [pages, categories, tags, posts] = await Promise.all([
       getLocalizedDocs<Page>(payload, 'pages', locale),
