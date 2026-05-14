@@ -40,7 +40,37 @@ function toSitemapEntry(
   }
 }
 
-async function getLocalizedDocs<T extends { updatedAt: string; url: string }>(
+function toExactSitemapEntries(
+  paths: Partial<Record<LocaleCode, string>>,
+  lastModified?: string | Date | null,
+): MetadataRoute.Sitemap {
+  const entries: MetadataRoute.Sitemap = []
+  const languages = Object.fromEntries(
+    LOCALES
+      .filter((locale) => paths[locale])
+      .map((locale) => [locale, absoluteUrl(paths[locale] as string)]),
+  )
+
+  for (const locale of LOCALES) {
+    const path = paths[locale]
+
+    if (!path) {
+      continue
+    }
+
+    entries.push({
+      url: absoluteUrl(path),
+      lastModified: lastModified ? new Date(lastModified) : undefined,
+      alternates: {
+        languages,
+      },
+    })
+  }
+
+  return entries
+}
+
+async function getLocalizedDocs<T extends { id: number; updatedAt: string; url: string }>(
   payload: Payload,
   collection: 'pages' | 'categories' | 'tags' | 'blog-posts',
   locale: LocaleCode,
@@ -70,33 +100,95 @@ async function getLocalizedDocs<T extends { updatedAt: string; url: string }>(
   return docs
 }
 
+async function getLocalizedDocSitemapEntries<T extends { id: number; updatedAt: string; url: string }>(
+  payload: Payload,
+  collection: 'pages' | 'blog-posts',
+  pathForDoc: (locale: LocaleCode, doc: T) => string,
+  where?: Record<string, unknown>,
+) {
+  const docsById = new Map<
+    number,
+    {
+      lastModified?: string | Date | null
+      paths: Partial<Record<LocaleCode, string>>
+    }
+  >()
+
+  for (const locale of LOCALES) {
+    const docs = await getLocalizedDocs<T>(payload, collection, locale, where)
+
+    for (const doc of docs) {
+      if (!doc.url) {
+        continue
+      }
+
+      const localizedDoc = docsById.get(doc.id) || { paths: {} }
+      localizedDoc.paths[locale] = pathForDoc(locale, doc)
+      localizedDoc.lastModified = localizedDoc.lastModified
+        ? new Date(localizedDoc.lastModified) > new Date(doc.updatedAt)
+          ? localizedDoc.lastModified
+          : doc.updatedAt
+        : doc.updatedAt
+      docsById.set(doc.id, localizedDoc)
+    }
+  }
+
+  return [...docsById.values()].flatMap((doc) =>
+    toExactSitemapEntries(doc.paths, doc.lastModified),
+  )
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const payload = await getPayload({ config: await getPayloadConfig() })
   const entries: MetadataRoute.Sitemap = []
 
-  for (const locale of LOCALES) {
-    entries.push(toSitemapEntry(`/${locale}`, locale))
-    entries.push(toSitemapEntry(`/${locale}/blog`, locale))
-    entries.push(toSitemapEntry(`/${locale}/tools`, locale))
+  entries.push(
+    ...toExactSitemapEntries({
+      de: '/de',
+      en: '/en',
+    }),
+    ...toExactSitemapEntries({
+      de: '/de/blog',
+      en: '/en/blog',
+    }),
+    ...toExactSitemapEntries({
+      de: '/de/tools',
+      en: '/en/tools',
+    }),
+  )
 
-    for (const tool of NETPLAN_TOOL_SLUGS) {
-      entries.push(toSitemapEntry(`/${locale}/tools/${tool}`, locale))
-    }
+  for (const tool of NETPLAN_TOOL_SLUGS) {
+    entries.push(
+      ...toExactSitemapEntries({
+        de: `/de/tools/${tool}`,
+        en: `/en/tools/${tool}`,
+      }),
+    )
+  }
 
-    const [pages, categories, tags, posts] = await Promise.all([
-      getLocalizedDocs<Page>(payload, 'pages', locale),
-      getLocalizedDocs<Category>(payload, 'categories', locale),
-      getLocalizedDocs<Tag>(payload, 'tags', locale),
-      getLocalizedDocs<BlogPost>(payload, 'blog-posts', locale, {
+  entries.push(
+    ...(await getLocalizedDocSitemapEntries<Page>(
+      payload,
+      'pages',
+      (locale, page) => `/${locale}/${page.url}`,
+    )),
+    ...(await getLocalizedDocSitemapEntries<BlogPost>(
+      payload,
+      'blog-posts',
+      (locale, post) => `/${locale}/${post.url}`,
+      {
         status: {
           equals: 'published',
         },
-      }),
-    ])
+      },
+    )),
+  )
 
-    for (const page of pages) {
-      entries.push(toSitemapEntry(`/${locale}/${page.url}`, locale, page.updatedAt))
-    }
+  for (const locale of LOCALES) {
+    const [categories, tags] = await Promise.all([
+      getLocalizedDocs<Category>(payload, 'categories', locale),
+      getLocalizedDocs<Tag>(payload, 'tags', locale),
+    ])
 
     for (const category of categories) {
       entries.push(toSitemapEntry(`/${locale}/blog/category/${category.url}`, locale, category.updatedAt))
@@ -104,12 +196,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     for (const tag of tags) {
       entries.push(toSitemapEntry(`/${locale}/blog/tag/${tag.url}`, locale, tag.updatedAt))
-    }
-
-    for (const post of posts) {
-      entries.push(
-        toSitemapEntry(`/${locale}/${post.url}`, locale, post.publishedAt || post.updatedAt),
-      )
     }
   }
 

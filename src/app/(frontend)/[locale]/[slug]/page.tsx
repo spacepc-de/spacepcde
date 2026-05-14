@@ -233,7 +233,7 @@ const getEntryBySlug = cache(async (locale: LocaleCode, slug: string) => {
     payload.find({
       collection: 'pages' as never,
       depth: 0,
-      fallbackLocale: 'de',
+      fallbackLocale: false,
       limit: 1,
       locale,
       sort: '-createdAt',
@@ -246,7 +246,7 @@ const getEntryBySlug = cache(async (locale: LocaleCode, slug: string) => {
     payload.find({
       collection: 'blog-posts' as never,
       depth: 2,
-      fallbackLocale: 'de',
+      fallbackLocale: false,
       limit: 1,
       locale,
       sort: '-publishedAt',
@@ -298,6 +298,7 @@ const getEntryBySlug = cache(async (locale: LocaleCode, slug: string) => {
       : null
 
   const targetLocale = getTargetLocale(locale)
+  let localizedEntryPath: string | undefined
   let localeSwitchHref = `/${targetLocale}`
 
   if (entry) {
@@ -319,8 +320,8 @@ const getEntryBySlug = cache(async (locale: LocaleCode, slug: string) => {
           }).catch((): null => null)) as (FrontendBlogPost & { id: number }) | null)
 
     if (localizedEntry?.url) {
-      localeSwitchHref =
-        entry.kind === 'post' ? `/${targetLocale}/${localizedEntry.url}` : `/${targetLocale}/${localizedEntry.url}`
+      localizedEntryPath = `/${targetLocale}/${localizedEntry.url}`
+      localeSwitchHref = localizedEntryPath
     } else {
       localeSwitchHref = entry.kind === 'post' ? `/${targetLocale}/blog` : `/${targetLocale}`
     }
@@ -333,6 +334,7 @@ const getEntryBySlug = cache(async (locale: LocaleCode, slug: string) => {
       getFallbackFooterLinks(locale),
     ),
     entry,
+    localizedEntryPath,
     localeSwitchHref,
     navItems: mapLinks(
       locale,
@@ -358,7 +360,7 @@ export async function generateMetadata({
     return {}
   }
 
-  const { entry, localeSwitchHref } = await getEntryBySlug(locale, slug)
+  const { entry, localizedEntryPath } = await getEntryBySlug(locale, slug)
 
   if (!entry) {
     return {
@@ -368,8 +370,8 @@ export async function generateMetadata({
 
   return {
     alternates: getExactLocalizedAlternates(locale, {
-      de: locale === 'de' ? `/${locale}/${entry.url}` : localeSwitchHref,
-      en: locale === 'en' ? `/${locale}/${entry.url}` : localeSwitchHref,
+      de: locale === 'de' ? `/${locale}/${entry.url}` : localizedEntryPath,
+      en: locale === 'en' ? `/${locale}/${entry.url}` : localizedEntryPath,
     }),
     description: buildEntryDescription(entry, locale),
     title: entry.seoTitle || `${entry.title} | spacepc.de`,

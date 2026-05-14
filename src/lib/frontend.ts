@@ -159,16 +159,22 @@ export function getExactLocalizedAlternates(
     en?: string
   },
 ) {
-  const dePath = paths.de || '/de'
-  const enPath = paths.en || '/en'
+  const canonical = paths[locale] || paths.de || paths.en || `/${locale}`
+  const languages: Record<string, string> = {}
+
+  if (paths.de) {
+    languages.de = paths.de
+    languages['x-default'] = paths.de
+  }
+
+  if (paths.en) {
+    languages.en = paths.en
+    languages['x-default'] ||= paths.en
+  }
 
   return {
-    canonical: locale === 'de' ? dePath : enPath,
-    languages: {
-      de: dePath,
-      en: enPath,
-      'x-default': '/de',
-    },
+    canonical,
+    languages,
   }
 }
 
