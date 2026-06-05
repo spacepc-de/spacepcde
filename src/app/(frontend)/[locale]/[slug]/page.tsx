@@ -697,8 +697,8 @@ export default async function LocalizedStaticPage({
                   <h3>{locale === 'de' ? 'Passende Produkte zum Beitrag' : 'Relevant products for this post'}</h3>
                   <p className="content-page__sidebar-note">
                     {locale === 'de'
-                      ? 'Einige Links in diesem Bereich können Affiliate-Links sein.'
-                      : 'Some links in this section may be affiliate links.'}
+                      ? 'Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.'
+                      : 'As an Amazon Associate I earn from qualifying purchases.'}
                   </p>
                   <ul className="content-page__product-list">
                     {products.slice(0, 8).map((product) => (
