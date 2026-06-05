@@ -80,13 +80,29 @@ export async function generateMetadata({
     return {}
   }
 
+  const title = 'Blog | spacepc.de'
+  const description =
+    locale === 'de'
+      ? 'Blog-Archiv mit technischen Artikeln, Kategorien und Tags auf spacepc.de.'
+      : 'Blog archive with technical posts, categories, and tags on spacepc.de.'
+
   return {
     alternates: getLocalizedAlternates(locale, 'blog'),
-    description:
-      locale === 'de'
-        ? 'Blog-Archiv mit technischen Artikeln, Kategorien und Tags auf spacepc.de.'
-        : 'Blog archive with technical posts, categories, and tags on spacepc.de.',
-    title: locale === 'de' ? 'Blog | spacepc.de' : 'Blog | spacepc.de',
+    description,
+    openGraph: {
+      description,
+      locale,
+      siteName: 'spacepc.de',
+      title,
+      type: 'website',
+      url: `/${locale}/blog`,
+    },
+    title,
+    twitter: {
+      card: 'summary',
+      description,
+      title,
+    },
   }
 }
 

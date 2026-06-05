@@ -24,6 +24,7 @@ import {
   getFallbackNavItems,
   isLocaleCode,
   mapLinks,
+  SITE_URL,
   type LocaleCode,
 } from '@/lib/frontend'
 import { renderMarkdownToHtml } from '@/lib/markdown'
@@ -104,6 +105,10 @@ function buildEntryDescription(entry: FrontendEntry, locale: LocaleCode) {
   }
 
   return locale === 'de' ? `${entry.title} auf spacepc.de.` : `${entry.title} on spacepc.de.`
+}
+
+function absoluteUrl(path: string) {
+  return new URL(path, SITE_URL).toString()
 }
 
 function getTargetLocale(locale: LocaleCode): LocaleCode {
@@ -368,13 +373,34 @@ export async function generateMetadata({
     }
   }
 
+  const title = entry.seoTitle || `${entry.title} | spacepc.de`
+  const description = buildEntryDescription(entry, locale)
+  const path = `/${locale}/${entry.url}`
+  const featuredImage = entry.kind === 'post' ? getFeaturedImage(entry) : null
+
   return {
     alternates: getExactLocalizedAlternates(locale, {
       de: locale === 'de' ? `/${locale}/${entry.url}` : localizedEntryPath,
       en: locale === 'en' ? `/${locale}/${entry.url}` : localizedEntryPath,
     }),
-    description: buildEntryDescription(entry, locale),
-    title: entry.seoTitle || `${entry.title} | spacepc.de`,
+    description,
+    openGraph: {
+      description,
+      images: featuredImage?.url ? [{ alt: featuredImage.alt || entry.title, url: featuredImage.url }] : undefined,
+      locale,
+      publishedTime: entry.kind === 'post' ? entry.publishedAt || undefined : undefined,
+      siteName: 'spacepc.de',
+      title,
+      type: entry.kind === 'post' ? 'article' : 'website',
+      url: path,
+    },
+    title,
+    twitter: {
+      card: featuredImage?.url ? 'summary_large_image' : 'summary',
+      description,
+      images: featuredImage?.url ? [featuredImage.url] : undefined,
+      title,
+    },
   }
 }
 
@@ -400,6 +426,35 @@ export default async function LocalizedStaticPage({
   const relatedPosts = entry.kind === 'post' ? await getRelatedPosts(payload, locale, entry) : []
 
   const featuredImage = entry.kind === 'post' ? getFeaturedImage(entry) : null
+  const entryPath = `/${locale}/${entry.url}`
+  const articleJsonLd =
+    entry.kind === 'post'
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          author:
+            entry.author && typeof entry.author !== 'number'
+              ? {
+                  '@type': 'Person',
+                  name: entry.author.name,
+                  url: absoluteUrl(`/${locale}/${entry.author.url}`),
+                }
+              : undefined,
+          dateModified: entry.publishedAt || undefined,
+          datePublished: entry.publishedAt || undefined,
+          description: buildEntryDescription(entry, locale),
+          headline: entry.title,
+          image: featuredImage?.url ? absoluteUrl(featuredImage.url) : undefined,
+          inLanguage: locale,
+          mainEntityOfPage: absoluteUrl(entryPath),
+          publisher: {
+            '@type': 'Organization',
+            name: 'spacepc.de',
+            url: SITE_URL,
+          },
+          url: absoluteUrl(entryPath),
+        }
+      : null
   const productGroups =
     entry.kind === 'post' && Array.isArray(entry.productGroups)
       ? entry.productGroups.filter((group): group is NonNullable<FrontendBlogPost['productGroups']>[number] & { id: number; title: string; products: { id?: string | null; link: string; productName: string }[] } => typeof group === 'object' && group !== null)
@@ -463,6 +518,13 @@ export default async function LocalizedStaticPage({
         localeSwitchHref={localeSwitchHref}
         navItems={navItems}
       />
+
+      {articleJsonLd ? (
+        <script
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+          type="application/ld+json"
+        />
+      ) : null}
 
       <main className="content-page">
         <section className="section content-page__layout">

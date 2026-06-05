@@ -141,13 +141,14 @@ export function mapLinks(
 export function getLocalizedAlternates(locale: LocaleCode, pathWithoutLocale = '') {
   const normalizedPath = pathWithoutLocale ? `/${pathWithoutLocale.replace(/^\/+/, '')}` : ''
   const currentPath = `/${locale}${normalizedPath}`
+  const defaultPath = `/de${normalizedPath}`
 
   return {
     canonical: currentPath,
     languages: {
       de: `/de${normalizedPath}`,
       en: `/en${normalizedPath}`,
-      'x-default': '/de',
+      'x-default': defaultPath,
     },
   }
 }

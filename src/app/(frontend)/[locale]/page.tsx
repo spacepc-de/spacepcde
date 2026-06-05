@@ -172,13 +172,29 @@ export async function generateMetadata({
     return {}
   }
 
+  const title = copy[locale].pageTitle
+  const description =
+    locale === 'de'
+      ? 'SpacePC bündelt IT-Support, Infrastrukturwissen und technische Artikel zu Linux, Monitoring, Hardware und smarten Systemen.'
+      : 'SpacePC combines IT support, infrastructure knowledge, and technical articles on Linux, monitoring, hardware, and smart systems.'
+
   return {
     alternates: getLocalizedAlternates(locale),
-    description:
-      locale === 'de'
-        ? 'SpacePC bündelt IT-Support, Infrastrukturwissen und technische Artikel zu Linux, Monitoring, Hardware und smarten Systemen.'
-        : 'SpacePC combines IT support, infrastructure knowledge, and technical articles on Linux, monitoring, hardware, and smart systems.',
-    title: copy[locale].pageTitle,
+    description,
+    openGraph: {
+      description,
+      locale,
+      siteName: 'spacepc.de',
+      title,
+      type: 'website',
+      url: `/${locale}`,
+    },
+    title,
+    twitter: {
+      card: 'summary',
+      description,
+      title,
+    },
   }
 }
 
