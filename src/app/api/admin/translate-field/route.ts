@@ -18,7 +18,7 @@ type RequestBody = {
   value?: string
 }
 
-const OPENAI_REQUEST_TIMEOUT_MS = 20_000
+const OPENAI_REQUEST_TIMEOUT_MS = 90_000
 const FALLBACK_TRANSLATION_MODEL = 'gpt-4o-mini'
 
 const translatableFieldPolicy: Record<string, Record<string, TranslationMode>> = {
@@ -258,7 +258,7 @@ export async function POST(request: Request) {
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         return NextResponse.json(
-          { error: 'OpenAI API Anfrage hat das Timeout überschritten.' },
+          { error: 'OpenAI API Anfrage hat das Timeout überschritten. Der Text ist vermutlich zu lang für eine einzelne Anfrage.' },
           { status: 504 },
         )
       }
