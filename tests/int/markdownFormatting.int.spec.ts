@@ -42,4 +42,12 @@ describe('normalizeMarkdownFormatting', () => {
 
     expect(output).toBe(['```cpp', 'int main() { return 0; }', '```'].join('\n'))
   })
+
+  it('removes empty headings outside code fences', () => {
+    const input = ['#', '', 'Intro', '', '```text', '#', '```'].join('\n')
+
+    const output = normalizeMarkdownFormatting(input)
+
+    expect(output).toBe(['', 'Intro', '', '```text', '#', '```'].join('\n'))
+  })
 })

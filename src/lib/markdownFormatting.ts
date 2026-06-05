@@ -1,5 +1,6 @@
 const TRIPLE_FENCE_LINE =
   /^\s*["']?(?:```|(?:\\`){3})(?:\s*([A-Za-z0-9_+-]+))?\s*["']?\s*$/
+const EMPTY_HEADING_LINE = /^\s{0,3}#{1,6}\s*$/
 
 export function normalizeMarkdownFormatting(markdown: string) {
   const lines = markdown.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n')
@@ -10,6 +11,10 @@ export function normalizeMarkdownFormatting(markdown: string) {
     const fenceMatch = line.match(TRIPLE_FENCE_LINE)
 
     if (!fenceMatch) {
+      if (!inTripleFence && EMPTY_HEADING_LINE.test(line)) {
+        continue
+      }
+
       normalizedLines.push(line)
       continue
     }
