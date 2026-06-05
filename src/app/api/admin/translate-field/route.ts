@@ -19,6 +19,7 @@ type RequestBody = {
 }
 
 const OPENAI_REQUEST_TIMEOUT_MS = 20_000
+const FALLBACK_TRANSLATION_MODEL = 'gpt-5-mini'
 
 const translatableFieldPolicy: Record<string, Record<string, TranslationMode>> = {
   'blog-posts': {
@@ -104,6 +105,89 @@ const translationInstructionsByMode: Record<TranslationMode, string> = {
   ].join(' '),
 }
 
+type OpenAIErrorPayload = {
+  error?: {
+    code?: string
+    message?: string
+    type?: string
+  }
+}
+
+async function readOpenAIError(response: Response) {
+  const raw = await response.text()
+
+  try {
+    const parsed = JSON.parse(raw) as OpenAIErrorPayload
+    return {
+      code: parsed.error?.code,
+      message: parsed.error?.message || raw,
+      raw,
+      type: parsed.error?.type,
+    }
+  } catch {
+    return {
+      message: raw,
+      raw,
+    }
+  }
+}
+
+function getOpenAIUserError(status: number, error: Awaited<ReturnType<typeof readOpenAIError>>) {
+  const message = error.message.toLowerCase()
+  const code = error.code?.toLowerCase()
+  const type = error.type?.toLowerCase()
+
+  if (status === 401) {
+    return 'OpenAI API-Key ist ungültig oder abgelaufen.'
+  }
+
+  if (status === 403) {
+    return 'Der OpenAI API-Key hat keinen Zugriff auf das gewählte Modell.'
+  }
+
+  if (status === 429 || code === 'insufficient_quota' || type === 'insufficient_quota') {
+    return 'OpenAI Limit oder Guthaben ist erschöpft.'
+  }
+
+  if (message.includes('model') || code === 'model_not_found') {
+    return 'Das konfigurierte OpenAI-Modell ist nicht verfügbar.'
+  }
+
+  return 'OpenAI API Fehler bei der Übersetzung.'
+}
+
+async function createOpenAITranslation({
+  apiKey,
+  input,
+  instructions,
+  model,
+  signal,
+}: {
+  apiKey: string
+  input: string
+  instructions: string
+  model: string
+  signal: AbortSignal
+}) {
+  return fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      input,
+      instructions,
+      max_output_tokens: 16384,
+      model,
+      reasoning: {
+        effort: 'none',
+      },
+    }),
+    signal,
+  })
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as RequestBody
@@ -158,25 +242,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OPENAI_API_KEY ist nicht gesetzt.' }, { status: 500 })
     }
 
-    const model = (await getRuntimeEnvValue('OPENAI_TRANSLATION_MODEL')) || 'gpt-5.2'
+    const model = (await getRuntimeEnvValue('OPENAI_TRANSLATION_MODEL')) || FALLBACK_TRANSLATION_MODEL
     const instructions = translationInstructionsByMode[translationMode]
+    const input = `Translate from ${sourceLocale} to ${targetLocale}:\n\n${value}`
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), OPENAI_REQUEST_TIMEOUT_MS)
     let openAIResponse: Response
 
     try {
-      openAIResponse = await fetch('https://api.openai.com/v1/responses', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          instructions,
-          input: `Translate from ${sourceLocale} to ${targetLocale}:\n\n${value}`,
-        }),
+      openAIResponse = await createOpenAITranslation({
+        apiKey: openAIKey,
+        input,
+        instructions,
+        model,
         signal: controller.signal,
       })
     } catch (error) {
@@ -193,12 +272,50 @@ export async function POST(request: Request) {
     }
 
     if (!openAIResponse.ok) {
-      const errorText = await openAIResponse.text()
+      const initialError = await readOpenAIError(openAIResponse)
       console.error('translate-field OpenAI API error', {
-        errorText,
+        code: initialError.code,
+        message: initialError.message,
+        model,
         status: openAIResponse.status,
+        type: initialError.type,
       })
-      return NextResponse.json({ error: 'OpenAI API Fehler bei der Übersetzung.' }, { status: 502 })
+
+      const shouldRetryWithFallback =
+        model !== FALLBACK_TRANSLATION_MODEL &&
+        (openAIResponse.status === 400 ||
+          openAIResponse.status === 403 ||
+          openAIResponse.status === 404 ||
+          initialError.code === 'model_not_found' ||
+          initialError.message.toLowerCase().includes('model'))
+
+      if (shouldRetryWithFallback) {
+        openAIResponse = await createOpenAITranslation({
+          apiKey: openAIKey,
+          input,
+          instructions,
+          model: FALLBACK_TRANSLATION_MODEL,
+          signal: controller.signal,
+        })
+      }
+
+      if (!openAIResponse.ok) {
+        const fallbackError =
+          shouldRetryWithFallback ? await readOpenAIError(openAIResponse) : initialError
+
+        console.error('translate-field OpenAI API retry failed', {
+          code: fallbackError.code,
+          message: fallbackError.message,
+          model: shouldRetryWithFallback ? FALLBACK_TRANSLATION_MODEL : model,
+          status: openAIResponse.status,
+          type: fallbackError.type,
+        })
+
+        return NextResponse.json(
+          { error: getOpenAIUserError(openAIResponse.status, fallbackError) },
+          { status: 502 },
+        )
+      }
     }
 
     const result = (await openAIResponse.json()) as {

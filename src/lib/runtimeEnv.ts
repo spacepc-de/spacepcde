@@ -24,14 +24,27 @@ export async function getRuntimeEnvValue(key: keyof RuntimeEnv): Promise<string 
   const cloudflareValue = cloudflareEnv?.[key]
 
   if (typeof cloudflareValue === 'string' && cloudflareValue.trim()) {
-    return cloudflareValue
+    return normalizeRuntimeEnvValue(cloudflareValue)
   }
 
   const processValue = process.env[key]
 
   if (typeof processValue === 'string' && processValue.trim()) {
-    return processValue
+    return normalizeRuntimeEnvValue(processValue)
   }
 
   return undefined
+}
+
+function normalizeRuntimeEnvValue(value: string) {
+  const trimmed = value.trim()
+
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim()
+  }
+
+  return trimmed
 }
