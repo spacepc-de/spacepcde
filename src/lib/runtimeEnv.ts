@@ -1,6 +1,11 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 
 type RuntimeEnv = {
+  AMAZON_CREATOR_CREDENTIAL_ID?: string
+  AMAZON_CREATOR_CREDENTIAL_SECRET?: string
+  AMAZON_CREATOR_VERSION?: string
+  AMAZON_MARKETPLACE?: string
+  AMAZON_PARTNER_TAG?: string
   OPENAI_API_KEY?: string
   OPENAI_TRANSLATION_MODEL?: string
 }
