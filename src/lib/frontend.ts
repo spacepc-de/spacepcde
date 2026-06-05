@@ -16,46 +16,133 @@ export function isLocaleCode(value: string): value is LocaleCode {
 export function getFallbackNavItems(locale: LocaleCode): LinkItem[] {
   return [
     {
-      href: `/${locale}#leistungen`,
-      label: locale === 'de' ? 'Leistungen' : 'Services',
+      href: `/${locale}`,
+      label: locale === 'de' ? 'Start' : 'Home',
       openInNewTab: false,
     },
-    { href: `/${locale}#wissen`, label: 'Blog', openInNewTab: false },
+    {
+      children: [
+        {
+          href: '/blog/tag/esp32',
+          label: 'ESP32',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/tag/arduino',
+          label: 'Arduino',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/tag/display',
+          label: locale === 'de' ? 'Displays' : 'Displays',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/tag/sensor',
+          label: locale === 'de' ? 'Sensoren' : 'Sensors',
+          openInNewTab: false,
+        },
+      ],
+      href: '/blog/category/microcontroller',
+      label: locale === 'de' ? 'Projekte' : 'Projects',
+      openInNewTab: false,
+    },
+    {
+      children: [
+        {
+          href: '/blog/tag/meshtastic',
+          label: 'Meshtastic',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/tag/meshcore',
+          label: 'Meshcore',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/tag/nordic-nrf',
+          label: 'Nordic nRF',
+          openInNewTab: false,
+        },
+      ],
+      href: '/blog/category/mesh',
+      label: locale === 'de' ? 'Funk & Mesh' : 'Radio & Mesh',
+      openInNewTab: false,
+    },
+    {
+      children: [
+        {
+          href: '/blog/tag/docker',
+          label: 'Docker',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/tag/linux',
+          label: 'Linux',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/tag/ansible',
+          label: 'Ansible',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/tag/monitoring',
+          label: locale === 'de' ? 'Monitoring' : 'Monitoring',
+          openInNewTab: false,
+        },
+      ],
+      href: '/blog/category/software',
+      label: locale === 'de' ? 'Server & Automation' : 'Servers & Automation',
+      openInNewTab: false,
+    },
+    {
+      children: [
+        {
+          href: '/blog/tag/wasserqualitat',
+          label: locale === 'de' ? 'Wasserqualität' : 'Water quality',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/tag/ekg',
+          label: 'EKG',
+          openInNewTab: false,
+        },
+        {
+          href: '/blog/category/gerate',
+          label: locale === 'de' ? 'Geräte' : 'Devices',
+          openInNewTab: false,
+        },
+      ],
+      href: '/blog',
+      label: locale === 'de' ? 'Ratgeber' : 'Guides',
+      openInNewTab: false,
+    },
     {
       children: [
         {
           href: '/tools/netplan-generator',
-          label: locale === 'de' ? 'Netplan Generator' : 'Netplan Generator',
+          label: 'Netplan Generator',
           openInNewTab: false,
         },
         {
           href: '/tools/netplan-static-ip-generator',
-          label: locale === 'de' ? 'Static IP Generator' : 'Static IP Generator',
+          label: locale === 'de' ? 'Static-IP Generator' : 'Static IP Generator',
           openInNewTab: false,
         },
         {
           href: '/tools/netplan-bridge-generator',
-          label: locale === 'de' ? 'Bridge Generator' : 'Bridge Generator',
+          label: 'Bridge Generator',
           openInNewTab: false,
         },
         {
           href: '/tools/netplan-vlan-generator',
-          label: locale === 'de' ? 'VLAN Generator' : 'VLAN Generator',
+          label: 'VLAN Generator',
           openInNewTab: false,
         },
       ],
-      href: `/${locale}/tools`,
-      label: locale === 'de' ? 'Tools' : 'Tools',
-      openInNewTab: false,
-    },
-    {
-      href: `/${locale}#produkte`,
-      label: locale === 'de' ? 'Angebot' : 'Offer',
-      openInNewTab: false,
-    },
-    {
-      href: `/${locale}#kontakt`,
-      label: locale === 'de' ? 'Kontakt' : 'Contact',
+      href: '/tools',
+      label: 'Tools',
       openInNewTab: false,
     },
   ]
