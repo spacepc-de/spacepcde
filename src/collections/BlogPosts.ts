@@ -3,7 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { withAIButton } from '../fields/aiButton'
 import { slugField } from '../fields/slug'
 import { withTranslationButton } from '../fields/translationButton'
-import { blogContentEditor } from '../lib/blogContent'
+import { blogContentEditor, syncBlogContent } from '../lib/blogContent'
 
 export const BlogPosts: CollectionConfig = {
   slug: 'blog-posts',
@@ -21,6 +21,46 @@ export const BlogPosts: CollectionConfig = {
     },
   },
   hooks: {
+    afterRead: [
+      async ({ doc, req }) => {
+        if (!doc) {
+          return doc
+        }
+
+        const syncedContent = await syncBlogContent({
+          config: req.payload.config,
+          content: doc.content,
+          contentMarkdown: doc.contentMarkdown,
+        })
+
+        return {
+          ...doc,
+          content: syncedContent.content,
+          contentMarkdown: syncedContent.contentMarkdown,
+        }
+      },
+    ],
+    beforeValidate: [
+      async ({ data, originalDoc, req }) => {
+        if (!data) {
+          return data
+        }
+
+        const syncedContent = await syncBlogContent({
+          config: req.payload.config,
+          content: data.content,
+          contentMarkdown: data.contentMarkdown,
+          originalContent: originalDoc?.content,
+          originalContentMarkdown: originalDoc?.contentMarkdown,
+        })
+
+        return {
+          ...data,
+          content: syncedContent.content,
+          contentMarkdown: syncedContent.contentMarkdown,
+        }
+      },
+    ],
     beforeChange: [
       ({ data, originalDoc }) => {
         if (!data) {
