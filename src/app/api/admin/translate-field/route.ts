@@ -19,7 +19,7 @@ type RequestBody = {
 }
 
 const OPENAI_REQUEST_TIMEOUT_MS = 20_000
-const FALLBACK_TRANSLATION_MODEL = 'gpt-5-mini'
+const FALLBACK_TRANSLATION_MODEL = 'gpt-4o-mini'
 
 const translatableFieldPolicy: Record<string, Record<string, TranslationMode>> = {
   'blog-posts': {
@@ -180,9 +180,6 @@ async function createOpenAITranslation({
       instructions,
       max_output_tokens: 16384,
       model,
-      reasoning: {
-        effort: 'none',
-      },
     }),
     signal,
   })
