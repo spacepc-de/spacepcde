@@ -710,6 +710,7 @@ export default async function LocalizedStaticPage({
                                 alt=""
                                 height={product.image.height ?? 64}
                                 src={product.image.url}
+                                unoptimized
                                 width={product.image.width ?? 64}
                               />
                             </span>

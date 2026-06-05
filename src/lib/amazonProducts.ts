@@ -5,7 +5,7 @@ import { getRuntimeEnvValue } from './runtimeEnv'
 const AMAZON_API_BASE_URL = 'https://creatorsapi.amazon'
 const TOKEN_TTL_MS = 55 * 60 * 1000
 const SEARCH_ITEMS_TTL_SECONDS = 12 * 60 * 60
-const GET_ITEMS_WITH_OFFERS_TTL_SECONDS = 2 * 60 * 60
+const GET_ITEMS_WITH_OFFERS_TTL_SECONDS = 60 * 60
 const GET_ITEMS_WITHOUT_OFFERS_TTL_SECONDS = 24 * 60 * 60
 const MAX_SEARCH_ITEMS = 10
 const MAX_GET_ITEMS = 10
