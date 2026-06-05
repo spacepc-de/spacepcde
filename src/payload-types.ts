@@ -232,15 +232,29 @@ export interface Tag {
 export interface ProductGroup {
   id: number;
   title: string;
+  url?: string | null;
   /**
-   * URL-Slug fuer Frontend-Routen, z. B. mein-artikel
+   * Manuelle Produktlinks. Optional, wenn Amazon-Produkte per Keyword oder ASIN geladen werden.
    */
-  url: string;
-  products: {
-    productName: string;
-    link: string;
-    id?: string | null;
-  }[];
+  products?:
+    | {
+        productName: string;
+        link: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Optionales Suchkeyword für automatisch geladene Amazon-Produkte, z. B. "usb-c-kabel".
+   */
+  amazonKeyword?: string | null;
+  /**
+   * Optionale feste ASINs, eine pro Zeile oder durch Kommas getrennt. ASINs haben Vorrang vor dem Keyword.
+   */
+  amazonAsins?: string | null;
+  /**
+   * Maximale Anzahl automatisch geladener Amazon-Produkte für diese Gruppe.
+   */
+  amazonProductLimit?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -256,11 +270,11 @@ export interface BlogPost {
    */
   url: string;
   /**
-   * Kurzer Teaser fuer Uebersichten und SEO
+   * Kurzer Teaser für Übersichten und SEO
    */
   excerpt?: string | null;
   /**
-   * WYSIWYG-Editor fuer den Beitrag. Markdown-Shortcuts wie #, ## oder - funktionieren direkt beim Tippen.
+   * WYSIWYG-Editor für den Beitrag. Markdown-Shortcuts wie #, ## oder - funktionieren direkt beim Tippen.
    */
   content: {
     root: {
@@ -278,17 +292,19 @@ export interface BlogPost {
     [k: string]: unknown;
   };
   /**
-   * Alternativ den Inhalt direkt als Markdown bearbeiten. Beim Speichern wird automatisch in den Editor synchronisiert.
+   * Alternativ den Inhalt direkt als Markdown bearbeiten. Über den Button oben kannst du Markdown formatieren und den Editor manuell synchronisieren.
    */
   contentMarkdown?: string | null;
   /**
-   * SEO-Titel fuer Suchmaschinen und Social Previews.
+   * SEO-Titel für Suchmaschinen und Social Previews.
    */
   seoTitle?: string | null;
   /**
-   * SEO-Beschreibung fuer Suchmaschinen und Social Previews.
+   * SEO-Beschreibung für Suchmaschinen und Social Previews.
    */
   seoDescription?: string | null;
+  status: 'draft' | 'published';
+  featured?: boolean | null;
   author: number | Author;
   categories?: (number | Category)[] | null;
   tags?: (number | Tag)[] | null;
@@ -310,11 +326,11 @@ export interface Page {
    */
   url: string;
   /**
-   * Fuer Impressum, Datenschutz und aehnliche Seiten.
+   * Für Impressum, Datenschutz und ähnliche Seiten.
    */
   isLegalPage?: boolean | null;
   /**
-   * WYSIWYG-Editor fuer statische Seiteninhalte.
+   * WYSIWYG-Editor für statische Seiteninhalte.
    */
   content: {
     root: {
@@ -336,11 +352,11 @@ export interface Page {
    */
   contentMarkdown?: string | null;
   /**
-   * SEO-Titel fuer Suchmaschinen und Social Previews.
+   * SEO-Titel für Suchmaschinen und Social Previews.
    */
   seoTitle?: string | null;
   /**
-   * SEO-Beschreibung fuer Suchmaschinen und Social Previews.
+   * SEO-Beschreibung für Suchmaschinen und Social Previews.
    */
   seoDescription?: string | null;
   updatedAt: string;
@@ -372,6 +388,10 @@ export interface Redirect {
 export interface Comment {
   id: number;
   post: number | BlogPost;
+  /**
+   * Optional: Antwort auf einen bestehenden Kommentar.
+   */
+  parent?: (number | null) | Comment;
   authorName: string;
   authorEmail: string;
   content: string;
@@ -390,6 +410,14 @@ export interface NavigationLink {
   href: string;
   order: number;
   openInNewTab?: boolean | null;
+  children?:
+    | {
+        label: string;
+        href: string;
+        openInNewTab?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -606,6 +634,9 @@ export interface ProductGroupsSelect<T extends boolean = true> {
         link?: T;
         id?: T;
       };
+  amazonKeyword?: T;
+  amazonAsins?: T;
+  amazonProductLimit?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -621,6 +652,8 @@ export interface BlogPostsSelect<T extends boolean = true> {
   contentMarkdown?: T;
   seoTitle?: T;
   seoDescription?: T;
+  status?: T;
+  featured?: T;
   author?: T;
   categories?: T;
   tags?: T;
@@ -663,6 +696,7 @@ export interface RedirectsSelect<T extends boolean = true> {
  */
 export interface CommentsSelect<T extends boolean = true> {
   post?: T;
+  parent?: T;
   authorName?: T;
   authorEmail?: T;
   content?: T;
@@ -680,6 +714,14 @@ export interface NavigationLinksSelect<T extends boolean = true> {
   href?: T;
   order?: T;
   openInNewTab?: T;
+  children?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+        openInNewTab?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

@@ -15,6 +15,7 @@ import * as migration_20260424_103000_legacy_blog_redirects from './20260424_103
 import * as migration_20260424_164500_comment_rate_limits from './20260424_164500_comment_rate_limits'
 import * as migration_20260424_171500_comments_lookup_index from './20260424_171500_comments_lookup_index'
 import * as migration_20260605_090000_amazon_product_cache from './20260605_090000_amazon_product_cache'
+import * as migration_20260605_100000_product_group_amazon_fields from './20260605_100000_product_group_amazon_fields'
 
 export const migrations = [
   {
@@ -101,5 +102,10 @@ export const migrations = [
     up: migration_20260605_090000_amazon_product_cache.up,
     down: migration_20260605_090000_amazon_product_cache.down,
     name: '20260605_090000_amazon_product_cache',
+  },
+  {
+    up: migration_20260605_100000_product_group_amazon_fields.up,
+    down: migration_20260605_100000_product_group_amazon_fields.down,
+    name: '20260605_100000_product_group_amazon_fields',
   },
 ]

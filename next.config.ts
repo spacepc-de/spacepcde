@@ -1,7 +1,7 @@
 import { withPayload } from '@payloadcms/next/withPayload'
+import type { NextConfig } from 'next'
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
@@ -36,6 +36,12 @@ const nextConfig = {
       },
       {
         pathname: '/api/media/file/**',
+      },
+    ],
+    remotePatterns: [
+      {
+        hostname: 'm.media-amazon.com',
+        protocol: 'https',
       },
     ],
   },

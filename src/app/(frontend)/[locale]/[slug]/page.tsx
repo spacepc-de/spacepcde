@@ -1,5 +1,6 @@
 import React, { cache } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -28,6 +29,7 @@ import {
   type LocaleCode,
 } from '@/lib/frontend'
 import { renderMarkdownToHtml } from '@/lib/markdown'
+import { getAmazonProducts, searchAmazonProducts, type AmazonProduct } from '@/lib/amazonProducts'
 
 export const revalidate = 21600
 const RELATED_POST_LIMIT = 4
@@ -147,12 +149,15 @@ type FrontendBlogPost = {
     | null
   publishedAt?: string | null
   productGroups?: Array<{
+    amazonAsins?: string | null
+    amazonKeyword?: string | null
+    amazonProductLimit?: number | null
     id: number
-    products: Array<{
+    products?: Array<{
       id?: string | null
       link: string
       productName: string
-    }>
+    }> | null
     title: string
   } | number> | null
   seoDescription?: string | null
@@ -166,6 +171,14 @@ type FrontendBlogPost = {
 type FrontendEntry =
   | ({ kind: 'page' } & FrontendPage)
   | ({ kind: 'post' } & FrontendBlogPost)
+
+type SidebarProduct = {
+  image?: AmazonProduct['image']
+  key: string
+  link: string
+  meta?: string
+  productName: string
+}
 
 async function getRelatedPosts(
   payload: Awaited<ReturnType<typeof getPayload>>,
@@ -230,6 +243,76 @@ async function getRelatedPosts(
     .filter((candidate) => candidate.score > 0)
     .sort((a, b) => b.score - a.score || toTimestamp(b.publishedAt) - toTimestamp(a.publishedAt))
     .slice(0, RELATED_POST_LIMIT)
+}
+
+function parseAmazonAsins(value: string | null | undefined) {
+  if (!value) {
+    return []
+  }
+
+  return value
+    .split(/[\s,;]+/)
+    .map((asin) => asin.trim().toUpperCase())
+    .filter(Boolean)
+}
+
+async function getAmazonSidebarProducts(
+  productGroups: Array<NonNullable<FrontendBlogPost['productGroups']>[number] & {
+    amazonAsins?: string | null
+    amazonKeyword?: string | null
+    amazonProductLimit?: number | null
+    id: number
+  }>,
+) {
+  const productResponses = await Promise.all(
+    productGroups.map(async (group) => {
+      const itemCount = Math.min(Math.max(group.amazonProductLimit ?? 4, 1), 8)
+      const asins = parseAmazonAsins(group.amazonAsins)
+
+      try {
+        if (asins.length > 0) {
+          return await getAmazonProducts({
+            asins: asins.slice(0, itemCount),
+            includeOffers: false,
+          })
+        }
+
+        if (group.amazonKeyword?.trim()) {
+          return await searchAmazonProducts({
+            includeOffers: false,
+            itemCount,
+            keyword: group.amazonKeyword,
+          })
+        }
+      } catch (error) {
+        console.error('Amazon-Produkte konnten nicht geladen werden.', error)
+      }
+
+      return null
+    }),
+  )
+
+  const products: SidebarProduct[] = []
+  const seenAsins = new Set<string>()
+
+  for (const response of productResponses) {
+    for (const product of response?.items ?? []) {
+      if (seenAsins.has(product.asin) || !product.detailPageUrl || !product.title) {
+        continue
+      }
+
+      seenAsins.add(product.asin)
+      products.push({
+        image: product.image,
+        key: `amazon-${product.asin}`,
+        link: product.detailPageUrl,
+        meta: 'Amazon',
+        productName: product.title,
+      })
+    }
+  }
+
+  return products
 }
 
 const getEntryBySlug = cache(async (locale: LocaleCode, slug: string) => {
@@ -459,12 +542,14 @@ export default async function LocalizedStaticPage({
     entry.kind === 'post' && Array.isArray(entry.productGroups)
       ? entry.productGroups.filter((group): group is NonNullable<FrontendBlogPost['productGroups']>[number] & { id: number; title: string; products: { id?: string | null; link: string; productName: string }[] } => typeof group === 'object' && group !== null)
       : []
-  const products = productGroups.flatMap((group) =>
-    group.products.map((product) => ({
+  const manualProducts: SidebarProduct[] = productGroups.flatMap((group) =>
+    (group.products ?? []).map((product) => ({
       ...product,
       key: `${group.id}-${product.id ?? product.productName}`,
     })),
   )
+  const amazonProducts = await getAmazonSidebarProducts(productGroups)
+  const products = [...manualProducts, ...amazonProducts]
   const relatedPostsSection =
     entry.kind === 'post' && relatedPosts.length > 0 ? (
       <section className="related-posts section">
@@ -619,7 +704,22 @@ export default async function LocalizedStaticPage({
                     {products.slice(0, 8).map((product) => (
                       <li key={product.key}>
                         <a href={product.link} rel="noreferrer" target="_blank">
-                          {product.productName}
+                          {product.image ? (
+                            <span className="content-page__product-image">
+                              <Image
+                                alt=""
+                                height={product.image.height ?? 64}
+                                src={product.image.url}
+                                width={product.image.width ?? 64}
+                              />
+                            </span>
+                          ) : null}
+                          <span className="content-page__product-content">
+                            <span>{product.productName}</span>
+                            {product.meta ? (
+                              <small>{product.meta}</small>
+                            ) : null}
+                          </span>
                         </a>
                       </li>
                     ))}
