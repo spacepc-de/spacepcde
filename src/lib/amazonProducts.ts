@@ -61,6 +61,11 @@ type AmazonApiItem = {
         amount?: number
         currency?: string
         displayAmount?: string
+        money?: {
+          amount?: number
+          currency?: string
+          displayAmount?: string
+        }
       }
     }>
   }
@@ -302,6 +307,7 @@ function normalizeItem(item: AmazonApiItem): AmazonProduct | null {
 
   const image = item.images?.primary?.medium
   const offer = item.offersV2?.listings?.[0]
+  const price = offer?.price?.money ?? offer?.price
 
   return {
     asin: item.asin,
@@ -320,11 +326,11 @@ function normalizeItem(item: AmazonApiItem): AmazonProduct | null {
           width: image.width,
         }
       : undefined,
-    price: offer?.price
+    price: price
       ? {
-          amount: offer.price.amount,
-          currency: offer.price.currency,
-          displayAmount: offer.price.displayAmount,
+          amount: price.amount,
+          currency: price.currency,
+          displayAmount: price.displayAmount,
         }
       : undefined,
     title: item.itemInfo?.title?.displayValue,
