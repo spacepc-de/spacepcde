@@ -29,6 +29,11 @@ type ResponsesAPIResult = {
   output_text?: string
 }
 
+type SeoResult = {
+  seoDescription?: string
+  seoTitle?: string
+}
+
 const SEO_TITLE_MAX = 60
 const SEO_DESCRIPTION_MAX = 155
 const OPENAI_REQUEST_TIMEOUT_MS = 20_000
@@ -100,6 +105,27 @@ function buildSeoInstructions(locale: string, retry = false) {
   ]
     .filter(Boolean)
     .join(' ')
+}
+
+function parseSeoResult(raw: string): SeoResult {
+  const trimmed = raw.trim()
+  const withoutFence = trimmed
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim()
+
+  try {
+    return JSON.parse(withoutFence) as SeoResult
+  } catch {
+    const jsonStart = withoutFence.indexOf('{')
+    const jsonEnd = withoutFence.lastIndexOf('}')
+
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+      throw new Error('Keine gültigen SEO-Daten erhalten.')
+    }
+
+    return JSON.parse(withoutFence.slice(jsonStart, jsonEnd + 1)) as SeoResult
+  }
 }
 
 async function runOpenAI({
@@ -225,10 +251,7 @@ export async function POST(request: Request) {
         input: source,
       })
 
-      let parsed = JSON.parse(seoRaw) as {
-        seoDescription?: string
-        seoTitle?: string
-      }
+      let parsed = parseSeoResult(seoRaw)
 
       if (!parsed.seoTitle?.trim() || !parsed.seoDescription?.trim()) {
         return NextResponse.json({ error: 'Keine gültigen SEO-Daten erhalten.' }, { status: 502 })
@@ -248,10 +271,7 @@ export async function POST(request: Request) {
           ].join('\n'),
         })
 
-        parsed = JSON.parse(seoRaw) as {
-          seoDescription?: string
-          seoTitle?: string
-        }
+        parsed = parseSeoResult(seoRaw)
 
         if (!parsed.seoTitle?.trim() || !parsed.seoDescription?.trim()) {
           return NextResponse.json({ error: 'Keine gültigen SEO-Daten erhalten.' }, { status: 502 })
