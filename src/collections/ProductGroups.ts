@@ -73,7 +73,7 @@ export const ProductGroups: CollectionConfig = {
     {
       name: 'amazonKeyword',
       type: 'text',
-      label: 'Amazon Keyword',
+      label: 'Amazon Schlagwort',
       admin: {
         description: 'Optionales Suchkeyword für automatisch geladene Amazon-Produkte, z. B. "usb-c-kabel".',
       },

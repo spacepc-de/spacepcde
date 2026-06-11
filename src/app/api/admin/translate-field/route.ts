@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 
 import { canAccessOpenAIAdminRoutes } from '@/lib/adminAuth'
 import { isAdminAIRateLimited } from '@/lib/adminAiRateLimit'
+import { syncBlogContent } from '@/lib/blogContent'
 import { getRuntimeEnvValue } from '@/lib/runtimeEnv'
 import { getPayloadConfig } from '@/payload.config'
 
@@ -18,7 +19,7 @@ type RequestBody = {
   value?: string
 }
 
-const OPENAI_REQUEST_TIMEOUT_MS = 90_000
+const OPENAI_REQUEST_TIMEOUT_MS = 180_000
 const FALLBACK_TRANSLATION_MODEL = 'gpt-4o-mini'
 
 const translatableFieldPolicy: Record<string, Record<string, TranslationMode>> = {
@@ -372,6 +373,22 @@ export async function POST(request: Request) {
       ) {
         updateData[requiredFieldName] = sourceValue
       }
+    }
+
+    if (
+      fieldName === 'contentMarkdown' &&
+      (collectionSlug === 'blog-posts' || collectionSlug === 'pages')
+    ) {
+      const syncedContent = await syncBlogContent({
+        config: payloadConfig,
+        content: targetDoc?.content,
+        contentMarkdown: translatedValue,
+        originalContent: targetDoc?.content,
+        originalContentMarkdown: targetDoc?.contentMarkdown,
+      })
+
+      updateData.content = syncedContent.content
+      updateData.contentMarkdown = syncedContent.contentMarkdown
     }
 
     await payload.update({

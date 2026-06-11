@@ -2,13 +2,31 @@ import { withPayload } from '@payloadcms/next/withPayload'
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  async redirects() {
+  async headers() {
+    const publicContentHeaders = [
+      {
+        key: 'Cache-Control',
+        value: 'public, s-maxage=3600, stale-while-revalidate=86400',
+      },
+    ]
+
     return [
       {
-        source: '/meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir',
-        destination: '/de/meshtastic-vs-meshcore-welches-lora-mesh-passt-zu-dir',
-        permanent: true,
+        source: '/:locale(de|en)/:path*',
+        headers: publicContentHeaders,
       },
+      {
+        source: '/sitemap.xml',
+        headers: publicContentHeaders,
+      },
+      {
+        source: '/robots.txt',
+        headers: publicContentHeaders,
+      },
+    ]
+  },
+  async redirects() {
+    return [
       {
         source: '/wetter-display-mit-esp32-und-3d-druck-gehaeuse',
         destination: '/de/wetter-display-mit-esp32-und-3d-druck-gehaeuse',

@@ -46,6 +46,14 @@ export const BlogPosts: CollectionConfig = {
           return data
         }
 
+        const hasContentInput =
+          Object.prototype.hasOwnProperty.call(data, 'content') ||
+          Object.prototype.hasOwnProperty.call(data, 'contentMarkdown')
+
+        if (!hasContentInput) {
+          return data
+        }
+
         const syncedContent = await syncBlogContent({
           config: req.payload.config,
           content: data.content,
