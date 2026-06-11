@@ -32,6 +32,20 @@ type ResponsesAPIResult = {
 const SEO_TITLE_MAX = 60
 const SEO_DESCRIPTION_MAX = 155
 const OPENAI_REQUEST_TIMEOUT_MS = 20_000
+const WEAK_SEO_PHRASES = [
+  'alles, was du wissen musst',
+  'der ultimative guide',
+  'die besten tipps',
+  'entdecke',
+  'erfahre',
+  'in diesem beitrag',
+  'in diesem artikel',
+  'learn more',
+  'discover',
+  'dive into',
+  'everything you need to know',
+  'ultimate guide',
+]
 
 const actionCollectionPolicy: Record<Action, Set<string>> = {
   generateSeo: new Set(['blog-posts', 'pages']),
@@ -53,6 +67,39 @@ function clampSeoText(value: string, maxLength: number) {
   }
 
   return normalized.slice(0, maxLength).trim()
+}
+
+function containsWeakSeoPhrase(value: string) {
+  const normalized = value.toLowerCase()
+
+  return WEAK_SEO_PHRASES.some((phrase) => normalized.includes(phrase))
+}
+
+function buildSeoInstructions(locale: string, retry = false) {
+  const language = locale === 'en' ? 'English' : 'German'
+  const bannedOpeners =
+    locale === 'en'
+      ? '"Learn", "Discover", "Dive into", "Everything you need to know", "Ultimate guide"'
+      : '"Erfahre", "Entdecke", "Alles, was du wissen musst", "Der ultimative Guide", "In diesem Beitrag"'
+
+  return [
+    `You are a senior technical SEO editor for a ${language} website about IT, hardware, software, servers, electronics, and technical guides.`,
+    'Return valid JSON only with exactly the keys "seoTitle" and "seoDescription".',
+    `Write in natural ${language}.`,
+    'First infer the primary search intent from the source: the concrete device, problem, comparison, tutorial, or decision the page answers.',
+    'Use specific nouns from the article. Prefer concrete terms such as product names, protocols, tools, errors, operating systems, hardware models, and use cases.',
+    `seoTitle: max ${SEO_TITLE_MAX} characters, no site name, no clickbait, no filler, no vague promise. Make it sound like a search result a technical reader would click.`,
+    `seoDescription: max ${SEO_DESCRIPTION_MAX} characters, one useful sentence. State the practical value, outcome, limitation, or decision help. Do not repeat the title with fluff.`,
+    `Do not start with or use generic SEO boilerplate such as ${bannedOpeners}.`,
+    'Avoid empty verbs like learn, discover, explore, dive into, unlock, optimize unless they are part of a concrete technical action from the article.',
+    'Do not invent benchmarks, prices, years, tests, ratings, compatibility claims, or product recommendations not supported by the source.',
+    'Do not use keyword stuffing, quotation marks, markdown, commentary, or extra keys.',
+    retry
+      ? 'The previous result was too generic. Rewrite it with sharper search intent, more concrete terminology, and no boilerplate phrases.'
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 }
 
 async function runOpenAI({
@@ -173,21 +220,12 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Keine Inhalte für SEO vorhanden.' }, { status: 400 })
       }
 
-      const seoRaw = await runOpenAI({
-        instructions: [
-          `You generate SEO fields for a ${locale === 'en' ? 'English' : 'German'} website.`,
-          'Return valid JSON only.',
-          'Use the keys "seoTitle" and "seoDescription".',
-          `Write the result in ${locale === 'en' ? 'natural English' : 'natural German'}.`,
-          `seoTitle must be concise, strong, and no longer than ${SEO_TITLE_MAX} characters.`,
-          `seoDescription must be informative, natural, and no longer than ${SEO_DESCRIPTION_MAX} characters.`,
-          'Avoid filler, keyword stuffing, and quotation marks unless they are essential.',
-          'Do not include markdown, commentary, or extra keys.',
-        ].join(' '),
+      let seoRaw = await runOpenAI({
+        instructions: buildSeoInstructions(locale),
         input: source,
       })
 
-      const parsed = JSON.parse(seoRaw) as {
+      let parsed = JSON.parse(seoRaw) as {
         seoDescription?: string
         seoTitle?: string
       }
@@ -196,8 +234,32 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Keine gültigen SEO-Daten erhalten.' }, { status: 502 })
       }
 
-      const seoTitle = clampSeoText(parsed.seoTitle, SEO_TITLE_MAX)
-      const seoDescription = clampSeoText(parsed.seoDescription, SEO_DESCRIPTION_MAX)
+      let seoTitle = clampSeoText(parsed.seoTitle, SEO_TITLE_MAX)
+      let seoDescription = clampSeoText(parsed.seoDescription, SEO_DESCRIPTION_MAX)
+
+      if (containsWeakSeoPhrase(seoTitle) || containsWeakSeoPhrase(seoDescription)) {
+        seoRaw = await runOpenAI({
+          instructions: buildSeoInstructions(locale, true),
+          input: [
+            source,
+            '',
+            'Rejected weak SEO result:',
+            JSON.stringify({ seoDescription, seoTitle }),
+          ].join('\n'),
+        })
+
+        parsed = JSON.parse(seoRaw) as {
+          seoDescription?: string
+          seoTitle?: string
+        }
+
+        if (!parsed.seoTitle?.trim() || !parsed.seoDescription?.trim()) {
+          return NextResponse.json({ error: 'Keine gültigen SEO-Daten erhalten.' }, { status: 502 })
+        }
+
+        seoTitle = clampSeoText(parsed.seoTitle, SEO_TITLE_MAX)
+        seoDescription = clampSeoText(parsed.seoDescription, SEO_DESCRIPTION_MAX)
+      }
 
       return NextResponse.json({
         message: 'SEO-Felder wurden erzeugt.',
