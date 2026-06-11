@@ -89,19 +89,28 @@ export const Pages: CollectionConfig = {
         {
           label: 'Editor',
           fields: [
-            withAIButton(
-              {
-                name: 'content',
-                type: 'richText',
-                required: true,
-                localized: true,
-                editor: blogContentEditor,
-                admin: {
-                  description: 'WYSIWYG-Editor für statische Seiteninhalte.',
+            {
+              name: 'editorialActions',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: './components/admin/AIFieldButton#AIFieldButton',
                 },
               },
-              'rewriteMarkdown',
-            ),
+              custom: {
+                aiAction: 'rewriteMarkdown',
+              },
+            },
+            {
+              name: 'content',
+              type: 'richText',
+              required: true,
+              localized: true,
+              editor: blogContentEditor,
+              admin: {
+                description: 'WYSIWYG-Editor für statische Seiteninhalte.',
+              },
+            },
           ],
         },
         {

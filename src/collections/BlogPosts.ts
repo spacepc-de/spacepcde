@@ -1,6 +1,5 @@
 import type { CollectionConfig } from 'payload'
 
-import { withAIButton } from '../fields/aiButton'
 import { slugField } from '../fields/slug'
 import { withTranslationButton } from '../fields/translationButton'
 import { blogContentEditor, syncBlogContent } from '../lib/blogContent'
@@ -133,7 +132,19 @@ export const BlogPosts: CollectionConfig = {
         {
           label: 'Editor',
           fields: [
-            withAIButton({
+            {
+              name: 'editorialActions',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: './components/admin/AIFieldButton#AIFieldButton',
+                },
+              },
+              custom: {
+                aiAction: 'rewriteMarkdown',
+              },
+            },
+            {
               name: 'content',
               type: 'richText',
               required: true,
@@ -143,7 +154,7 @@ export const BlogPosts: CollectionConfig = {
                 description:
                   'WYSIWYG-Editor für den Beitrag. Markdown-Shortcuts wie #, ## oder - funktionieren direkt beim Tippen.',
               },
-            }, 'rewriteMarkdown'),
+            },
           ],
         },
         {
