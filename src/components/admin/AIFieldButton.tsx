@@ -4,6 +4,7 @@ import { Button, toast, useDocumentInfo, useField, useLocale } from '@payloadcms
 import React, { useState } from 'react'
 
 const baseClass = 'ai-field-button'
+type EditorialMode = 'experienceReport' | 'opinion' | 'service' | 'technicalGuide'
 
 type Props = {
   field: {
@@ -22,6 +23,12 @@ type AIActionResponse = {
   result?: {
     content?: unknown
     contentMarkdown?: string
+    editorialQa?: {
+      score?: number
+      spacepc_stil_score?: number
+    }
+    editorialMode?: EditorialMode
+    repairRuns?: number
     seoDescription?: string
     seoTitle?: string
   }
@@ -51,7 +58,11 @@ export const AIFieldButton = (props: Props) => {
       return
     }
 
-    if (!titleField.value?.trim() && !excerptField.value?.trim() && !contentMarkdownField.value?.trim()) {
+    if (
+      !titleField.value?.trim() &&
+      !excerptField.value?.trim() &&
+      !contentMarkdownField.value?.trim()
+    ) {
       toast.error('Es fehlen Inhalte für die SEO-Generierung.')
       return
     }
@@ -92,7 +103,14 @@ export const AIFieldButton = (props: Props) => {
     }
   }
 
-  const handleRewriteMarkdown = async () => {
+  const rewriteModes: Array<{ label: string; mode: EditorialMode }> = [
+    { label: 'Anleitung', mode: 'technicalGuide' },
+    { label: 'Erfahrung', mode: 'experienceReport' },
+    { label: 'Meinung', mode: 'opinion' },
+    { label: 'Service', mode: 'service' },
+  ]
+
+  const handleRewriteMarkdown = async (editorialMode: EditorialMode) => {
     if (!collectionSlug || !id) {
       toast.error('Dokument erst speichern, dann Inhalt umschreiben.')
       return
@@ -117,6 +135,7 @@ export const AIFieldButton = (props: Props) => {
           input: {
             content: contentField.value,
             contentMarkdown: contentMarkdownField.value,
+            editorialMode,
             title: titleField.value,
           },
         }),
@@ -125,7 +144,7 @@ export const AIFieldButton = (props: Props) => {
       const json = (await response.json()) as AIActionResponse
 
       if (!response.ok || !json.result?.contentMarkdown) {
-        toast.error(json.error ?? 'Markdown-Umschreibung fehlgeschlagen.')
+        toast.error(json.error ?? 'Überarbeitung fehlgeschlagen.')
         return
       }
 
@@ -134,42 +153,58 @@ export const AIFieldButton = (props: Props) => {
         contentField.setValue(json.result.content)
       }
 
-      toast.success(json.message ?? 'Inhalt wurde in sauberes Markdown umgeschrieben.')
+      toast.success(json.message ?? 'Inhalt wurde überarbeitet und per QA freigegeben.')
     } catch {
-      toast.error('Markdown-Umschreibung fehlgeschlagen.')
+      toast.error('Überarbeitung fehlgeschlagen.')
     } finally {
       setIsLoading(false)
     }
   }
-
-  const buttonLabel =
-    buttonLabelOverride ??
-    (action === 'generateSeo'
-      ? isLoading
-        ? 'SEO wird erzeugt...'
-        : 'SEO mit KI'
-      : isLoading
-        ? 'Markdown wird erzeugt...'
-        : 'Mit KI in Markdown umschreiben')
 
   const isDisabled =
     !collectionSlug ||
     !id ||
     isLoading ||
     (action === 'generateSeo'
-      ? !titleField.value?.trim() && !excerptField.value?.trim() && !contentMarkdownField.value?.trim()
+      ? !titleField.value?.trim() &&
+        !excerptField.value?.trim() &&
+        !contentMarkdownField.value?.trim()
       : !contentField.value && !contentMarkdownField.value?.trim())
+
+  if (action === 'rewriteMarkdown') {
+    return (
+      <div
+        className={baseClass}
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+          justifyContent: 'flex-end',
+          marginTop: '0.5rem',
+        }}
+      >
+        {rewriteModes.map((mode) => (
+          <Button
+            buttonStyle="secondary"
+            disabled={isDisabled}
+            key={mode.mode}
+            onClick={() => handleRewriteMarkdown(mode.mode)}
+          >
+            {isLoading ? 'Text wird geprüft...' : mode.label}
+          </Button>
+        ))}
+      </div>
+    )
+  }
+
+  const buttonLabel = buttonLabelOverride ?? (isLoading ? 'SEO wird erzeugt...' : 'SEO mit KI')
 
   return (
     <div
       className={baseClass}
       style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}
     >
-      <Button
-        buttonStyle="secondary"
-        disabled={isDisabled}
-        onClick={action === 'generateSeo' ? handleGenerateSeo : handleRewriteMarkdown}
-      >
+      <Button buttonStyle="secondary" disabled={isDisabled} onClick={handleGenerateSeo}>
         {buttonLabel}
       </Button>
     </div>

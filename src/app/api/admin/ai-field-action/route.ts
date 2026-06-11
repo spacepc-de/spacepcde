@@ -8,6 +8,7 @@ import { getRuntimeEnvValue } from '@/lib/runtimeEnv'
 import { getPayloadConfig } from '@/payload.config'
 
 type Action = 'generateSeo' | 'rewriteMarkdown'
+type EditorialMode = 'auto' | 'experienceReport' | 'opinion' | 'service' | 'technicalGuide'
 
 type RequestBody = {
   action?: Action
@@ -16,6 +17,7 @@ type RequestBody = {
   input?: {
     content?: unknown
     contentMarkdown?: string
+    editorialMode?: EditorialMode
     excerpt?: string
     title?: string
   }
@@ -34,9 +36,50 @@ type SeoResult = {
   seoTitle?: string
 }
 
+type EditorialContext = {
+  kanal: string
+  mode: Exclude<EditorialMode, 'auto'>
+  modeLabel: string
+  stilvorgaben: string
+  struktur: string
+  ton: string
+  zielgruppe: string
+}
+
+type RewriteResult = {
+  aenderungen?: string[]
+  bewertung_original?: {
+    hauptprobleme?: string[]
+    ki_typische_stellen?: string[]
+    lesbarkeit?: string
+  }
+  offene_punkte?: string[]
+  ueberarbeiteter_text?: string
+}
+
+type QAProblem = {
+  empfehlung?: string
+  kategorie?: string
+  problem?: string
+  stelle?: string
+}
+
+type QAResult = {
+  freigabe?: boolean
+  gesamturteil?: string
+  muss_nochmal_ueberarbeitet_werden?: boolean
+  probleme?: QAProblem[]
+  score?: number
+  spacepc_stil_score?: number
+}
+
 const SEO_TITLE_MAX = 60
 const SEO_DESCRIPTION_MAX = 155
-const OPENAI_REQUEST_TIMEOUT_MS = 20_000
+const OPENAI_REQUEST_TIMEOUT_MS = 120_000
+const EDITORIAL_APPROVAL_SCORE = 85
+const EDITORIAL_REPAIR_SCORE = 70
+const EDITORIAL_MAX_REPAIRS = 2
+const SPACEPC_STYLE_APPROVAL_SCORE = 85
 const WEAK_SEO_PHRASES = [
   'alles, was du wissen musst',
   'der ultimative guide',
@@ -55,6 +98,106 @@ const WEAK_SEO_PHRASES = [
 const actionCollectionPolicy: Record<Action, Set<string>> = {
   generateSeo: new Set(['blog-posts', 'pages']),
   rewriteMarkdown: new Set(['blog-posts', 'pages']),
+}
+
+const editorialPresets: Record<Exclude<EditorialMode, 'auto'>, EditorialContext> = {
+  technicalGuide: {
+    mode: 'technicalGuide',
+    modeLabel: 'Technische Anleitung',
+    zielgruppe:
+      'Deutschsprachige Technikinteressierte, Homelab-Nutzer, Admins, Linux-/Docker-Nutzer, Maker und kleine Unternehmen mit praktischen Infrastrukturproblemen.',
+    kanal: 'Technischer Blogbeitrag / Ratgeber auf spacepc.de',
+    ton: 'direkt, technisch sauber, verständlich, praktisch, ohne unnötige Theorie',
+    stilvorgaben:
+      'Schreibe wie ein erfahrener Techniker, der das Problem aus der Praxis kennt. Nutze Du-Ansprache, konkrete Schritte, typische Stolperfallen und sinnvolle Empfehlungen. Keine generischen KI-Floskeln, kein Marketing-Blabla, keine sterile Lexikon-Sprache. Kurze Absätze. Gemischte Satzlängen. Kein Gendern.',
+    struktur:
+      'Kurzer Einstieg mit dem konkreten Problem -> wann das relevant ist -> Voraussetzungen -> Umsetzung Schritt für Schritt -> wichtige Hinweise oder typische Fehler -> klares Fazit.',
+  },
+  experienceReport: {
+    mode: 'experienceReport',
+    modeLabel: 'Erfahrungsbericht / Produkttest',
+    zielgruppe:
+      'Deutschsprachige Technikinteressierte, Homelab-Nutzer, Admins, Maker und Leser, die ehrliche Erfahrungsberichte zu Technikprodukten suchen.',
+    kanal: 'Erfahrungsbericht / Produkttest auf spacepc.de',
+    ton: 'persönlich, direkt, konkret, ehrlich, mit klarer Meinung',
+    stilvorgaben:
+      'Der Text soll klingen, als hätte jemand das Produkt wirklich genutzt und bewertet. Nenne Vorteile und Schwächen. Kleine humorvolle Vergleiche sind erlaubt, aber nicht übertreiben. Keine weichgespülte Werbesprache. Keine neuen Messwerte, Preise oder technischen Behauptungen erfinden. Wenn etwas fehlt, mit [konkrete Info ergänzen] markieren. Kein Gendern.',
+    struktur:
+      'Warum das Produkt interessant war -> erster Eindruck -> Einrichtung oder Nutzung im Alltag -> was gut funktioniert -> was nervt oder besser sein könnte -> Fazit: Für wen lohnt es sich, für wen nicht?',
+  },
+  opinion: {
+    mode: 'opinion',
+    modeLabel: 'Meinung / Rant',
+    zielgruppe:
+      'Deutschsprachige Technikleute, Admins, Linux-/Docker-Nutzer, Maker und Leser, die klare technische Einordnung statt neutralem PR-Ton suchen.',
+    kanal: 'Meinungsstarker Technik-Kommentar auf spacepc.de',
+    ton: 'direkt, kritisch, leicht sarkastisch, pointiert, begründet',
+    stilvorgaben:
+      'Nutze Alltagsvergleiche, kurze Punchline-Sätze und konkrete Beispiele. Der Text darf genervt klingen, soll aber begründet bleiben. Kritik muss nachvollziehbar bleiben. Keine leeren Pauschalurteile. Keine KI-Floskeln. Kein Corporate-Marketing-Ton. Kein Gendern.',
+    struktur:
+      'Einstieg mit starker Beobachtung -> Kernproblem klar benennen -> Beispiele und technische Einordnung -> warum das im Alltag nervt -> was besser laufen müsste -> klares Fazit.',
+  },
+  service: {
+    mode: 'service',
+    modeLabel: 'Service-Text',
+    zielgruppe:
+      'Kleine Unternehmen, Agenturen, Betreiber produktiver Systeme, IT-Verantwortliche und Selbständige mit Linux-, Docker-, Hosting- oder Infrastrukturproblemen.',
+    kanal: 'Service- oder Angebotsseite für spacepc.dev',
+    ton: 'direkt, zuverlässig, technisch kompetent, ruhig, ohne Agentur-Geschwafel',
+    stilvorgaben:
+      'Kurz, konkret, lösungsorientiert. Fokus auf reale Erfahrung, schnelle Fehleranalyse, stabile Systeme und direkte Umsetzung. Keine aufgeblasenen Versprechen. Keine Buzzwords. Keine übertriebenen Garantien. Keine erfundenen Referenzen. Kein Gendern.',
+    struktur:
+      'Klares Problem -> was konkret übernommen wird -> für wen es passt -> was das Ergebnis ist -> kurzer Call-to-Action.',
+  },
+}
+
+function inferEditorialMode({
+  collectionSlug,
+  source,
+  title,
+}: {
+  collectionSlug: string
+  source: string
+  title?: string
+}): Exclude<EditorialMode, 'auto'> {
+  if (collectionSlug === 'pages') {
+    return 'service'
+  }
+
+  const haystack = `${title ?? ''}\n${source}`.toLowerCase()
+
+  if (
+    /\b(test|erfahrung|review|produkt|gekauft|alltag|lohnt|erster eindruck|was nervt)\b/.test(
+      haystack,
+    )
+  ) {
+    return 'experienceReport'
+  }
+
+  if (/\b(rant|meinung|kommentar|warum|nervt|problem mit|kritik|microsoft)\b/.test(haystack)) {
+    return 'opinion'
+  }
+
+  return 'technicalGuide'
+}
+
+function getEditorialContext({
+  collectionSlug,
+  requestedMode,
+  source,
+  title,
+}: {
+  collectionSlug: string
+  requestedMode?: EditorialMode
+  source: string
+  title?: string
+}): EditorialContext {
+  const mode =
+    requestedMode && requestedMode !== 'auto'
+      ? requestedMode
+      : inferEditorialMode({ collectionSlug, source, title })
+
+  return editorialPresets[mode]
 }
 
 function clampSeoText(value: string, maxLength: number) {
@@ -107,7 +250,7 @@ function buildSeoInstructions(locale: string, retry = false) {
     .join(' ')
 }
 
-function parseSeoResult(raw: string): SeoResult {
+function parseJsonObject<T>(raw: string, errorMessage: string): T {
   const trimmed = raw.trim()
   const withoutFence = trimmed
     .replace(/^```(?:json)?\s*/i, '')
@@ -115,26 +258,288 @@ function parseSeoResult(raw: string): SeoResult {
     .trim()
 
   try {
-    return JSON.parse(withoutFence) as SeoResult
+    return JSON.parse(withoutFence) as T
   } catch {
     const jsonStart = withoutFence.indexOf('{')
     const jsonEnd = withoutFence.lastIndexOf('}')
 
     if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-      throw new Error('Keine gültigen SEO-Daten erhalten.')
+      throw new Error(errorMessage)
     }
 
-    return JSON.parse(withoutFence.slice(jsonStart, jsonEnd + 1)) as SeoResult
+    return JSON.parse(withoutFence.slice(jsonStart, jsonEnd + 1)) as T
   }
 }
 
-async function runOpenAI({
-  input,
-  instructions,
+function parseSeoResult(raw: string): SeoResult {
+  return parseJsonObject<SeoResult>(raw, 'Keine gültigen SEO-Daten erhalten.')
+}
+
+function parseRewriteResult(raw: string): RewriteResult {
+  return parseJsonObject<RewriteResult>(raw, 'Keine gültigen Überarbeitungsdaten erhalten.')
+}
+
+function parseQAResult(raw: string): QAResult {
+  const parsed = parseJsonObject<QAResult>(raw, 'Keine gültigen QA-Daten erhalten.')
+
+  return {
+    ...parsed,
+    score: typeof parsed.score === 'number' ? Math.max(0, Math.min(100, parsed.score)) : 0,
+    spacepc_stil_score:
+      typeof parsed.spacepc_stil_score === 'number'
+        ? Math.max(0, Math.min(100, parsed.spacepc_stil_score))
+        : 0,
+  }
+}
+
+function buildRewriteInstructions({
+  context,
+  language,
 }: {
-  input: string
-  instructions: string
+  context: EditorialContext
+  language: string
 }) {
+  return [
+    'Du bist ein erfahrener deutscher Redakteur.',
+    'Deine Aufgabe: Prüfe und überarbeite den folgenden Text so, dass er natürlicher, klarer und menschlicher klingt.',
+    'Wichtig:',
+    '- Verändere keine Fakten.',
+    '- Erfinde keine neuen Aussagen, Zahlen, Namen, Beispiele oder Versprechen.',
+    '- Entferne typische KI-Floskeln, Marketing-Blabla und unnötige Füllsätze.',
+    '- Schreibe direkter, konkreter und verständlicher.',
+    '- Variiere Satzlängen, aber übertreibe es nicht.',
+    '- Nutze aktive Sprache.',
+    '- Behalte Fachbegriffe bei, wenn sie sinnvoll sind.',
+    '- Der Text soll nicht künstlich locker wirken.',
+    '- Keine absichtlichen Fehler einbauen.',
+    language === 'Deutsch' ? '- Kein Gendern.' : '',
+    '- Keine Erklärung vor oder nach dem Ergebnis.',
+    'Kontext:',
+    `Zielgruppe: ${context.zielgruppe}`,
+    `Kanal: ${context.kanal}`,
+    `Ton: ${context.ton}`,
+    `Sprache: ${language}`,
+    `Content-Modus: ${context.modeLabel}`,
+    `Empfohlene Struktur: ${context.struktur}`,
+    'Stilvorgaben:',
+    context.stilvorgaben,
+    'SpacePC-Schreibstil:',
+    '- Ansprache: Du.',
+    '- Perspektive: persönlich, erfahrungsnah, technisch.',
+    '- Wirkung: kompetent, nahbar, praktisch, nicht werblich.',
+    '- Wortwahl: klare Alltagssprache mit technischen Begriffen, wenn sie nötig sind.',
+    '- Haltung: lieber konkret kritisieren als neutral herumformulieren.',
+    '- Der Text soll nicht wie ein neutraler KI-Ratgeber klingen, sondern wie ein technisch erfahrener Mensch, der das Thema aus der Praxis kennt, klar bewertet und ohne Marketing-Blabla erklärt.',
+    '- Keine Floskeln wie "in der heutigen digitalen Welt", "innovative Lösung", "maßgeschneidert", "nahtlose Integration".',
+    'Antworte ausschließlich als valides JSON in exakt dieser Struktur:',
+    '{"bewertung_original":{"ki_typische_stellen":[],"hauptprobleme":[],"lesbarkeit":"kurze Einschätzung"},"ueberarbeiteter_text":"Hier steht der vollständig überarbeitete Text.","aenderungen":["kurze Beschreibung der wichtigsten Änderung"],"offene_punkte":["Nur ausfüllen, wenn konkrete Informationen fehlen. Sonst leeres Array."]}',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+function buildQAInstructions({
+  context,
+  language,
+}: {
+  context: EditorialContext
+  language: string
+}) {
+  return [
+    'Du bist Qualitätsprüfer für deutsche Texte.',
+    'Deine Aufgabe: Vergleiche den Originaltext mit der überarbeiteten Version und prüfe, ob die Überarbeitung brauchbar ist.',
+    'Prüfkriterien:',
+    '1. Wurden Fakten verändert?',
+    '2. Wurden neue Aussagen erfunden?',
+    '3. Wurde etwas Wichtiges entfernt?',
+    '4. Ist der Text klarer und natürlicher geworden?',
+    '5. Klingt der Text weniger nach KI?',
+    '6. Ist der Ton passend für Zielgruppe und Kanal?',
+    '7. Gibt es Floskeln, Buzzwords oder unnötige Füllsätze?',
+    '8. Ist die Sprache sauber, konkret und verständlich?',
+    language === 'Deutsch' ? '9. Wurde auf Gendern verzichtet?' : '',
+    '10. Ist der Text sofort veröffentlichbar?',
+    'Kontext:',
+    `Zielgruppe: ${context.zielgruppe}`,
+    `Kanal: ${context.kanal}`,
+    `Ton: ${context.ton}`,
+    `Sprache: ${language}`,
+    `Content-Modus: ${context.modeLabel}`,
+    'Bewerte den Score von 0 bis 100. Ab 85 ist der Text automatisch freigabefähig.',
+    'Prüfe zusätzlich, ob der Text zum SpacePC-Stil passt:',
+    '1. Gibt es einen konkreten Einstieg statt generischer Einleitung?',
+    '2. Klingt der Text nach echter Praxiserfahrung?',
+    '3. Gibt es klare Aussagen statt weichgespülter Formulierungen?',
+    '4. Sind technische Begriffe korrekt und sinnvoll eingesetzt?',
+    '5. Gibt es unnötiges Marketing-Blabla?',
+    '6. Ist der Text direkt genug?',
+    '7. Gibt es natürliche Satzvariation?',
+    '8. Klingt der Text zu glatt, zu neutral oder zu sehr nach KI?',
+    '9. Passt die Du-Ansprache?',
+    '10. Wurde auf Gendern verzichtet?',
+    'Bewerte zusätzlich "spacepc_stil_score" von 0 bis 100.',
+    'Antworte ausschließlich als valides JSON in exakt dieser Struktur:',
+    '{"freigabe":true,"score":0,"spacepc_stil_score":0,"probleme":[{"kategorie":"Faktenfehler | Halluzination | Auslassung | Stil | Sprache | Ton | Floskel | Sonstiges","stelle":"betroffene Textstelle","problem":"kurze Beschreibung","empfehlung":"konkrete Korrektur"}],"gesamturteil":"kurze Einschätzung","muss_nochmal_ueberarbeitet_werden":false}',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+function buildRepairInstructions({
+  context,
+  language,
+}: {
+  context: EditorialContext
+  language: string
+}) {
+  return [
+    'Du bist ein deutscher Redakteur.',
+    'Die folgende Überarbeitung wurde geprüft und hat noch Probleme. Verbessere sie anhand des QA-Berichts.',
+    'Regeln:',
+    '- Nutze den Originaltext als Wahrheit.',
+    '- Übernimm keine erfundenen Aussagen.',
+    '- Korrigiere alle im QA-Bericht genannten Probleme.',
+    '- Entferne Floskeln und unnatürliche Formulierungen.',
+    '- Behalte den gewünschten Ton bei.',
+    language === 'Deutsch' ? '- Kein Gendern.' : '',
+    '- Gib nur den finalen Text aus, keine Erklärung.',
+    'Kontext:',
+    `Zielgruppe: ${context.zielgruppe}`,
+    `Kanal: ${context.kanal}`,
+    `Ton: ${context.ton}`,
+    `Sprache: ${language}`,
+    `Content-Modus: ${context.modeLabel}`,
+    `Empfohlene Struktur: ${context.struktur}`,
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+function buildQAInput({
+  originalText,
+  rewrittenText,
+}: {
+  originalText: string
+  rewrittenText: string
+}) {
+  return [
+    'Originaltext:',
+    '"""',
+    originalText,
+    '"""',
+    '',
+    'Überarbeitete Version:',
+    '"""',
+    rewrittenText,
+    '"""',
+  ].join('\n')
+}
+
+function buildRepairInput({
+  originalText,
+  qa,
+  rewrittenText,
+}: {
+  originalText: string
+  qa: QAResult
+  rewrittenText: string
+}) {
+  return [
+    'Originaltext:',
+    '"""',
+    originalText,
+    '"""',
+    '',
+    'Bisherige Überarbeitung:',
+    '"""',
+    rewrittenText,
+    '"""',
+    '',
+    'QA-Bericht:',
+    '"""',
+    JSON.stringify(qa, null, 2),
+    '"""',
+  ].join('\n')
+}
+
+async function runEditorialRewrite({
+  collectionSlug,
+  requestedMode,
+  locale,
+  source,
+  title,
+}: {
+  collectionSlug: string
+  requestedMode?: EditorialMode
+  locale: string
+  source: string
+  title?: string
+}) {
+  const context = getEditorialContext({ collectionSlug, requestedMode, source, title })
+  const language = locale === 'en' ? 'Englisch' : 'Deutsch'
+  const rewriteRaw = await runOpenAI({
+    instructions: buildRewriteInstructions({ context, language }),
+    input: ['Originaltext:', '"""', source, '"""'].join('\n'),
+  })
+  const rewrite = parseRewriteResult(rewriteRaw)
+  let rewrittenText = rewrite.ueberarbeiteter_text?.trim()
+
+  if (!rewrittenText) {
+    throw new Error('Die KI hat keinen überarbeiteten Text zurückgegeben.')
+  }
+
+  let qa = parseQAResult(
+    await runOpenAI({
+      instructions: buildQAInstructions({ context, language }),
+      input: buildQAInput({ originalText: source, rewrittenText }),
+    }),
+  )
+
+  let repairs = 0
+
+  while (
+    (qa.score ?? 0) < EDITORIAL_APPROVAL_SCORE ||
+    (qa.spacepc_stil_score ?? 0) < SPACEPC_STYLE_APPROVAL_SCORE ||
+    qa.freigabe !== true ||
+    qa.muss_nochmal_ueberarbeitet_werden === true
+  ) {
+    if ((qa.score ?? 0) < EDITORIAL_REPAIR_SCORE || repairs >= EDITORIAL_MAX_REPAIRS) {
+      throw new Error(
+        `Automatische Überarbeitung braucht manuelle Prüfung. QA-Score: ${qa.score ?? 0}, SpacePC-Stil: ${qa.spacepc_stil_score ?? 0}. ${qa.gesamturteil ?? ''}`.trim(),
+      )
+    }
+
+    rewrittenText = (
+      await runOpenAI({
+        instructions: buildRepairInstructions({ context, language }),
+        input: buildRepairInput({ originalText: source, qa, rewrittenText }),
+      })
+    ).trim()
+
+    if (!rewrittenText) {
+      throw new Error('Die KI hat nach dem Repair keinen Text zurückgegeben.')
+    }
+
+    repairs += 1
+    qa = parseQAResult(
+      await runOpenAI({
+        instructions: buildQAInstructions({ context, language }),
+        input: buildQAInput({ originalText: source, rewrittenText }),
+      }),
+    )
+  }
+
+  return {
+    mode: context.mode,
+    modeLabel: context.modeLabel,
+    qa,
+    repairs,
+    rewrite,
+    text: rewrittenText,
+  }
+}
+
+async function runOpenAI({ input, instructions }: { input: string; instructions: string }) {
   const apiKey = await getRuntimeEnvValue('OPENAI_API_KEY')
   const model = (await getRuntimeEnvValue('OPENAI_TRANSLATION_MODEL')) || 'gpt-5.2'
 
@@ -205,7 +610,10 @@ export async function POST(request: Request) {
     }
 
     if (!actionCollectionPolicy[action].has(collectionSlug)) {
-      return NextResponse.json({ error: 'Collection ist für diese KI-Aktion nicht freigeschaltet.' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Collection ist für diese KI-Aktion nicht freigeschaltet.' },
+        { status: 400 },
+      )
     }
 
     const payloadConfig = await getPayloadConfig()
@@ -291,37 +699,47 @@ export async function POST(request: Request) {
     }
 
     if (action === 'rewriteMarkdown') {
+      const sourceContent = await syncBlogContent({
+        config: payloadConfig,
+        content: input.content,
+        contentMarkdown: input.contentMarkdown,
+      })
       const source =
-        input.contentMarkdown?.trim() ||
-        (typeof input.content === 'string' ? input.content.trim() : JSON.stringify(input.content))
+        typeof sourceContent.contentMarkdown === 'string' && sourceContent.contentMarkdown.trim()
+          ? sourceContent.contentMarkdown.trim()
+          : typeof input.content === 'string'
+            ? input.content.trim()
+            : JSON.stringify(input.content)
 
       if (!source?.trim()) {
-        return NextResponse.json({ error: 'Kein Inhalt zum Umschreiben vorhanden.' }, { status: 400 })
+        return NextResponse.json(
+          { error: 'Kein Inhalt zum Umschreiben vorhanden.' },
+          { status: 400 },
+        )
       }
 
-      const markdown = await runOpenAI({
-        instructions: [
-          'Rewrite the provided content into clean, well-structured Markdown in the same language.',
-          'Preserve technical meaning and factual content.',
-          'Improve headings, lists, spacing, and readability.',
-          'Return Markdown only with no commentary.',
-        ].join(' '),
-        input: input.contentMarkdown?.trim()
-          ? input.contentMarkdown
-          : `Konvertiere diesen Inhalt in sauberes Markdown:\n\n${source}`,
+      const editorialResult = await runEditorialRewrite({
+        collectionSlug,
+        requestedMode: input.editorialMode,
+        locale,
+        source,
+        title: input.title,
       })
 
       const syncedContent = await syncBlogContent({
         config: payloadConfig,
-        content: input.content,
-        contentMarkdown: markdown,
+        content: sourceContent.content,
+        contentMarkdown: editorialResult.text,
       })
 
       return NextResponse.json({
-        message: 'Inhalt wurde in Markdown umgeschrieben.',
+        message: `Inhalt wurde als ${editorialResult.modeLabel} überarbeitet und per QA freigegeben (Score ${editorialResult.qa.score ?? 0}, Stil ${editorialResult.qa.spacepc_stil_score ?? 0}).`,
         result: {
           content: syncedContent.content,
           contentMarkdown: syncedContent.contentMarkdown,
+          editorialQa: editorialResult.qa,
+          editorialMode: editorialResult.mode,
+          repairRuns: editorialResult.repairs,
         },
       })
     }
