@@ -21,6 +21,7 @@ type AIActionResponse = {
   error?: string
   message?: string
   result?: {
+    chunkCount?: number
     content?: unknown
     contentMarkdown?: string
     editorialQa?: {

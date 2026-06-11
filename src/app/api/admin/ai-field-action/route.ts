@@ -73,12 +73,33 @@ type QAResult = {
   spacepc_stil_score?: number
 }
 
+type EditorialRunResult = {
+  chunkCount?: number
+  mode: Exclude<EditorialMode, 'auto'>
+  modeLabel: string
+  qa: QAResult
+  repairs: number
+  rewrite?: RewriteResult
+  text: string
+}
+
+type ProtectedMarkdown = {
+  protectedText: string
+  replacements: Array<{
+    token: string
+    value: string
+  }>
+}
+
 const SEO_TITLE_MAX = 60
 const SEO_DESCRIPTION_MAX = 155
 const OPENAI_REQUEST_TIMEOUT_MS = 120_000
 const EDITORIAL_APPROVAL_SCORE = 85
 const EDITORIAL_REPAIR_SCORE = 70
 const EDITORIAL_MAX_REPAIRS = 2
+const EDITORIAL_SECTION_REWRITE_THRESHOLD = 8_000
+const EDITORIAL_MANUAL_REVIEW_THRESHOLD = 25_000
+const EDITORIAL_MAX_SECTION_LENGTH = 6_500
 const SPACEPC_STYLE_APPROVAL_SCORE = 85
 const WEAK_SEO_PHRASES = [
   'alles, was du wissen musst',
@@ -200,6 +221,146 @@ function getEditorialContext({
   return editorialPresets[mode]
 }
 
+function protectMarkdown(value: string): ProtectedMarkdown {
+  const replacements: ProtectedMarkdown['replacements'] = []
+  let protectedText = value
+
+  const addReplacement = (match: string) => {
+    const token = `[[SPC_PROTECTED_${replacements.length}]]`
+    replacements.push({ token, value: match })
+    return token
+  }
+
+  protectedText = protectedText.replace(/```[\s\S]*?```/g, addReplacement)
+  protectedText = protectedText.replace(/`[^`\n]+`/g, addReplacement)
+  protectedText = protectedText.replace(/https?:\/\/[^\s)\]}>"']+/g, addReplacement)
+
+  return {
+    protectedText,
+    replacements,
+  }
+}
+
+function restoreProtectedMarkdown({ protectedText, replacements }: ProtectedMarkdown) {
+  return replacements.reduce((text, replacement) => {
+    return text.split(replacement.token).join(replacement.value)
+  }, protectedText)
+}
+
+function assertProtectedTokensPreserved({ protectedText, replacements }: ProtectedMarkdown) {
+  const missingToken = replacements.find(
+    (replacement) => !protectedText.includes(replacement.token),
+  )
+
+  if (missingToken) {
+    throw new Error(
+      `Geschützter Inhalt wurde verändert oder entfernt (${missingToken.token}). Abschnitt wird nicht automatisch übernommen.`,
+    )
+  }
+}
+
+function splitOversizedPlainBlock(block: string) {
+  if (block.length <= EDITORIAL_MAX_SECTION_LENGTH) {
+    return [block]
+  }
+
+  const chunks: string[] = []
+  let remaining = block
+
+  while (remaining.length > EDITORIAL_MAX_SECTION_LENGTH) {
+    const window = remaining.slice(0, EDITORIAL_MAX_SECTION_LENGTH + 1)
+    const splitAt = Math.max(
+      window.lastIndexOf('\n'),
+      window.lastIndexOf('. '),
+      window.lastIndexOf('! '),
+      window.lastIndexOf('? '),
+    )
+    const end =
+      splitAt > Math.floor(EDITORIAL_MAX_SECTION_LENGTH * 0.55)
+        ? splitAt + 1
+        : EDITORIAL_MAX_SECTION_LENGTH
+
+    chunks.push(remaining.slice(0, end).trim())
+    remaining = remaining.slice(end).trim()
+  }
+
+  if (remaining) {
+    chunks.push(remaining)
+  }
+
+  return chunks
+}
+
+function splitLongMarkdownSection(section: string) {
+  if (section.length <= EDITORIAL_MAX_SECTION_LENGTH) {
+    return [section]
+  }
+
+  const chunks: string[] = []
+  const paragraphs = section.split(/\n{2,}/)
+  let current = ''
+
+  for (const paragraph of paragraphs) {
+    if (paragraph.length > EDITORIAL_MAX_SECTION_LENGTH) {
+      if (current) {
+        chunks.push(current)
+        current = ''
+      }
+
+      chunks.push(...splitOversizedPlainBlock(paragraph))
+      continue
+    }
+
+    const separator = current ? '\n\n' : ''
+
+    if (
+      current &&
+      current.length + separator.length + paragraph.length > EDITORIAL_MAX_SECTION_LENGTH
+    ) {
+      chunks.push(current)
+      current = paragraph
+      continue
+    }
+
+    current = `${current}${separator}${paragraph}`
+  }
+
+  if (current) {
+    chunks.push(current)
+  }
+
+  return chunks
+}
+
+function splitMarkdownIntoEditorialSections(markdown: string) {
+  const sections: string[] = []
+  const lines = markdown.split('\n')
+  let current: string[] = []
+  let inFence = false
+
+  for (const line of lines) {
+    if (/^\s*```/.test(line)) {
+      inFence = !inFence
+    }
+
+    const startsNewSection = !inFence && /^#{1,3}\s+\S/.test(line) && current.length > 0
+
+    if (startsNewSection) {
+      sections.push(current.join('\n'))
+      current = [line]
+      continue
+    }
+
+    current.push(line)
+  }
+
+  if (current.length > 0) {
+    sections.push(current.join('\n'))
+  }
+
+  return sections.flatMap(splitLongMarkdownSection).filter((section) => section.trim())
+}
+
 function clampSeoText(value: string, maxLength: number) {
   const normalized = value.replace(/\s+/g, ' ').trim()
 
@@ -310,6 +471,7 @@ function buildRewriteInstructions({
     '- Variiere Satzlängen, aber übertreibe es nicht.',
     '- Nutze aktive Sprache.',
     '- Behalte Fachbegriffe bei, wenn sie sinnvoll sind.',
+    '- Behandle Platzhalter im Format [[SPC_PROTECTED_0]] als unveränderliche geschützte Inhalte. Gib sie exakt unverändert zurück.',
     '- Der Text soll nicht künstlich locker wirken.',
     '- Keine absichtlichen Fehler einbauen.',
     language === 'Deutsch' ? '- Kein Gendern.' : '',
@@ -401,6 +563,7 @@ function buildRepairInstructions({
     '- Korrigiere alle im QA-Bericht genannten Probleme.',
     '- Entferne Floskeln und unnatürliche Formulierungen.',
     '- Behalte den gewünschten Ton bei.',
+    '- Behandle Platzhalter im Format [[SPC_PROTECTED_0]] als unveränderliche geschützte Inhalte. Gib sie exakt unverändert zurück.',
     language === 'Deutsch' ? '- Kein Gendern.' : '',
     '- Gib nur den finalen Text aus, keine Erklärung.',
     'Kontext:',
@@ -474,7 +637,7 @@ async function runEditorialRewrite({
   locale: string
   source: string
   title?: string
-}) {
+}): Promise<EditorialRunResult> {
   const context = getEditorialContext({ collectionSlug, requestedMode, source, title })
   const language = locale === 'en' ? 'Englisch' : 'Deutsch'
   const rewriteRaw = await runOpenAI({
@@ -537,6 +700,183 @@ async function runEditorialRewrite({
     rewrite,
     text: rewrittenText,
   }
+}
+
+function aggregateQAResults(results: QAResult[]): QAResult {
+  if (results.length === 0) {
+    return {
+      freigabe: false,
+      probleme: [],
+      score: 0,
+      spacepc_stil_score: 0,
+      gesamturteil: 'Keine QA-Ergebnisse vorhanden.',
+      muss_nochmal_ueberarbeitet_werden: true,
+    }
+  }
+
+  const minScore = Math.min(...results.map((result) => result.score ?? 0))
+  const minStyleScore = Math.min(...results.map((result) => result.spacepc_stil_score ?? 0))
+  const problems = results.flatMap((result) => result.probleme ?? [])
+
+  return {
+    freigabe:
+      results.every((result) => result.freigabe === true) &&
+      minScore >= EDITORIAL_APPROVAL_SCORE &&
+      minStyleScore >= SPACEPC_STYLE_APPROVAL_SCORE,
+    probleme: problems,
+    score: minScore,
+    spacepc_stil_score: minStyleScore,
+    gesamturteil: `Abschnittsweise geprüft. Schwächster QA-Score: ${minScore}, schwächster SpacePC-Stilscore: ${minStyleScore}.`,
+    muss_nochmal_ueberarbeitet_werden: results.some(
+      (result) => result.muss_nochmal_ueberarbeitet_werden === true,
+    ),
+  }
+}
+
+async function runProtectedSectionRewrite({
+  collectionSlug,
+  locale,
+  requestedMode,
+  section,
+  title,
+}: {
+  collectionSlug: string
+  locale: string
+  requestedMode?: EditorialMode
+  section: string
+  title?: string
+}) {
+  const protectedSection = protectMarkdown(section)
+  const result = await runEditorialRewrite({
+    collectionSlug,
+    locale,
+    requestedMode,
+    source: protectedSection.protectedText,
+    title,
+  })
+
+  assertProtectedTokensPreserved({
+    ...protectedSection,
+    protectedText: result.text,
+  })
+
+  return {
+    ...result,
+    text: restoreProtectedMarkdown({
+      ...protectedSection,
+      protectedText: result.text,
+    }),
+  }
+}
+
+async function runChunkedEditorialRewrite({
+  collectionSlug,
+  locale,
+  requestedMode,
+  source,
+  title,
+}: {
+  collectionSlug: string
+  locale: string
+  requestedMode?: EditorialMode
+  source: string
+  title?: string
+}): Promise<EditorialRunResult> {
+  const sections = splitMarkdownIntoEditorialSections(source)
+
+  if (sections.length < 2) {
+    return runProtectedSectionRewrite({
+      collectionSlug,
+      locale,
+      requestedMode,
+      section: source,
+      title,
+    })
+  }
+
+  const rewrittenSections: string[] = []
+  const sectionResults: EditorialRunResult[] = []
+
+  for (const section of sections) {
+    const rewrittenSection = await runProtectedSectionRewrite({
+      collectionSlug,
+      locale,
+      requestedMode,
+      section,
+      title,
+    })
+
+    rewrittenSections.push(rewrittenSection.text)
+    sectionResults.push(rewrittenSection)
+  }
+
+  const text = rewrittenSections.join('\n\n').trim()
+  const context = getEditorialContext({ collectionSlug, requestedMode, source, title })
+  const language = locale === 'en' ? 'Englisch' : 'Deutsch'
+  const finalQA = parseQAResult(
+    await runOpenAI({
+      instructions: buildQAInstructions({ context, language }),
+      input: buildQAInput({ originalText: source, rewrittenText: text }),
+    }),
+  )
+
+  if (
+    finalQA.freigabe !== true ||
+    (finalQA.score ?? 0) < EDITORIAL_APPROVAL_SCORE ||
+    (finalQA.spacepc_stil_score ?? 0) < SPACEPC_STYLE_APPROVAL_SCORE ||
+    finalQA.muss_nochmal_ueberarbeitet_werden === true
+  ) {
+    throw new Error(
+      `Gesamt-QA nach abschnittsweiser Überarbeitung braucht manuelle Prüfung. QA-Score: ${finalQA.score ?? 0}, SpacePC-Stil: ${finalQA.spacepc_stil_score ?? 0}. ${finalQA.gesamturteil ?? ''}`.trim(),
+    )
+  }
+
+  return {
+    chunkCount: sections.length,
+    mode: context.mode,
+    modeLabel: context.modeLabel,
+    qa: aggregateQAResults([...sectionResults.map((result) => result.qa), finalQA]),
+    repairs: sectionResults.reduce((sum, result) => sum + result.repairs, 0),
+    text,
+  }
+}
+
+async function runSafeEditorialRewrite({
+  collectionSlug,
+  locale,
+  requestedMode,
+  source,
+  title,
+}: {
+  collectionSlug: string
+  locale: string
+  requestedMode?: EditorialMode
+  source: string
+  title?: string
+}) {
+  if (source.length > EDITORIAL_MANUAL_REVIEW_THRESHOLD) {
+    throw new Error(
+      `Text ist zu lang für automatische Überarbeitung (${source.length} Zeichen). Bitte abschnittsweise manuell prüfen oder kürzere Teile überarbeiten.`,
+    )
+  }
+
+  if (source.length > EDITORIAL_SECTION_REWRITE_THRESHOLD) {
+    return runChunkedEditorialRewrite({
+      collectionSlug,
+      locale,
+      requestedMode,
+      source,
+      title,
+    })
+  }
+
+  return runProtectedSectionRewrite({
+    collectionSlug,
+    locale,
+    requestedMode,
+    section: source,
+    title,
+  })
 }
 
 async function runOpenAI({ input, instructions }: { input: string; instructions: string }) {
@@ -718,7 +1058,7 @@ export async function POST(request: Request) {
         )
       }
 
-      const editorialResult = await runEditorialRewrite({
+      const editorialResult = await runSafeEditorialRewrite({
         collectionSlug,
         requestedMode: input.editorialMode,
         locale,
@@ -732,11 +1072,16 @@ export async function POST(request: Request) {
         contentMarkdown: editorialResult.text,
       })
 
+      const chunkInfo = editorialResult.chunkCount
+        ? ` in ${editorialResult.chunkCount} Abschnitten`
+        : ''
+
       return NextResponse.json({
-        message: `Inhalt wurde als ${editorialResult.modeLabel} überarbeitet und per QA freigegeben (Score ${editorialResult.qa.score ?? 0}, Stil ${editorialResult.qa.spacepc_stil_score ?? 0}).`,
+        message: `Inhalt wurde als ${editorialResult.modeLabel}${chunkInfo} überarbeitet und per QA freigegeben (Score ${editorialResult.qa.score ?? 0}, Stil ${editorialResult.qa.spacepc_stil_score ?? 0}).`,
         result: {
           content: syncedContent.content,
           contentMarkdown: syncedContent.contentMarkdown,
+          chunkCount: editorialResult.chunkCount,
           editorialQa: editorialResult.qa,
           editorialMode: editorialResult.mode,
           repairRuns: editorialResult.repairs,
