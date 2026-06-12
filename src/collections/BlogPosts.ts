@@ -137,11 +137,8 @@ export const BlogPosts: CollectionConfig = {
               type: 'ui',
               admin: {
                 components: {
-                  Field: './components/admin/AIFieldButton#AIFieldButton',
+                  Field: './components/admin/EditorialAIActions#EditorialAIActions',
                 },
-              },
-              custom: {
-                aiAction: 'rewriteMarkdown',
               },
             },
             {

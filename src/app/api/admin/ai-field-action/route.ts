@@ -1084,6 +1084,7 @@ export async function POST(request: Request) {
           chunkCount: editorialResult.chunkCount,
           editorialQa: editorialResult.qa,
           editorialMode: editorialResult.mode,
+          originalContentMarkdown: source,
           repairRuns: editorialResult.repairs,
         },
       })
