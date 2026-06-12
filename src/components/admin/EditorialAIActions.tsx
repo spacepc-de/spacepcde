@@ -11,15 +11,19 @@ type AIActionResponse = {
   result?: {
     content?: unknown
     contentMarkdown?: string
+    manualReviewReason?: string
     originalContentMarkdown?: string
+    requiresManualReview?: boolean
   }
 }
 
 type PendingRewrite = {
   content?: unknown
   contentMarkdown: string
+  manualReviewReason?: string
   message?: string
   originalContentMarkdown: string
+  requiresManualReview?: boolean
 }
 
 type DiffRow = {
@@ -90,7 +94,7 @@ export const EditorialAIActions = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [pendingRewrite, setPendingRewrite] = useState<PendingRewrite | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
-  const [statusTone, setStatusTone] = useState<'error' | 'info' | 'success'>('info')
+  const [statusTone, setStatusTone] = useState<'error' | 'info' | 'success' | 'warning'>('info')
 
   const titleField = useField<string>({ path: 'title' })
   const contentField = useField<unknown>({ path: 'content' })
@@ -158,13 +162,21 @@ export const EditorialAIActions = () => {
       setPendingRewrite({
         content: json.result.content,
         contentMarkdown: json.result.contentMarkdown,
+        manualReviewReason: json.result.manualReviewReason,
         message: json.message,
         originalContentMarkdown,
+        requiresManualReview: json.result.requiresManualReview,
       })
 
       if (originalContentMarkdown === json.result.contentMarkdown) {
         setStatusTone('info')
         setStatusMessage('Die KI hat keine sichtbaren Änderungen am Markdown geliefert.')
+      } else if (json.result.requiresManualReview) {
+        setStatusTone('warning')
+        setStatusMessage(
+          json.message ??
+            `Überarbeitung ist als Vorschau bereit, aber manuelle Prüfung ist empfohlen. ${json.result.manualReviewReason ?? ''}`.trim(),
+        )
       } else {
         setStatusTone('success')
         setStatusMessage('Überarbeitung ist als Vorschau bereit. Noch nichts wurde übernommen.')
@@ -205,15 +217,19 @@ export const EditorialAIActions = () => {
   const statusBackground =
     statusTone === 'error'
       ? 'rgba(239, 68, 68, 0.12)'
-      : statusTone === 'success'
-        ? 'rgba(34, 197, 94, 0.12)'
-        : 'var(--theme-elevation-50)'
+      : statusTone === 'warning'
+        ? 'rgba(245, 158, 11, 0.14)'
+        : statusTone === 'success'
+          ? 'rgba(34, 197, 94, 0.12)'
+          : 'var(--theme-elevation-50)'
   const statusBorder =
     statusTone === 'error'
       ? 'rgba(239, 68, 68, 0.45)'
-      : statusTone === 'success'
-        ? 'rgba(34, 197, 94, 0.45)'
-        : 'var(--theme-elevation-150)'
+      : statusTone === 'warning'
+        ? 'rgba(245, 158, 11, 0.55)'
+        : statusTone === 'success'
+          ? 'rgba(34, 197, 94, 0.45)'
+          : 'var(--theme-elevation-150)'
 
   return (
     <div style={{ marginBottom: '1rem' }}>
@@ -303,6 +319,17 @@ export const EditorialAIActions = () => {
                   ? `${addedLines} hinzugefügt, ${removedLines} entfernt`
                   : 'Keine zeilenweisen Unterschiede erkannt'}
               </div>
+              {pendingRewrite.requiresManualReview ? (
+                <div
+                  style={{
+                    color: 'var(--theme-elevation-700)',
+                    fontSize: '0.86rem',
+                    marginTop: '0.35rem',
+                  }}
+                >
+                  Nicht automatisch freigegeben. Bitte Diff vor dem Übernehmen manuell prüfen.
+                </div>
+              ) : null}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               <Button buttonStyle="secondary" onClick={() => setPendingRewrite(null)}>

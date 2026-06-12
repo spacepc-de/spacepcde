@@ -46,17 +46,6 @@ type EditorialContext = {
   zielgruppe: string
 }
 
-type RewriteResult = {
-  aenderungen?: string[]
-  bewertung_original?: {
-    hauptprobleme?: string[]
-    ki_typische_stellen?: string[]
-    lesbarkeit?: string
-  }
-  offene_punkte?: string[]
-  ueberarbeiteter_text?: string
-}
-
 type QAProblem = {
   empfehlung?: string
   kategorie?: string
@@ -75,11 +64,12 @@ type QAResult = {
 
 type EditorialRunResult = {
   chunkCount?: number
+  manualReviewReason?: string
   mode: Exclude<EditorialMode, 'auto'>
   modeLabel: string
   qa: QAResult
   repairs: number
-  rewrite?: RewriteResult
+  requiresManualReview?: boolean
   text: string
 }
 
@@ -240,7 +230,6 @@ function protectMarkdown(value: string): ProtectedMarkdown {
     replacements,
   }
 }
-
 function restoreProtectedMarkdown({ protectedText, replacements }: ProtectedMarkdown) {
   return replacements.reduce((text, replacement) => {
     return text.split(replacement.token).join(replacement.value)
@@ -411,6 +400,55 @@ function buildSeoInstructions(locale: string, retry = false) {
     .join(' ')
 }
 
+function extractFirstJsonObject(value: string) {
+  const start = value.indexOf('{')
+
+  if (start === -1) {
+    return null
+  }
+
+  let depth = 0
+  let inString = false
+  let escaped = false
+
+  for (let index = start; index < value.length; index += 1) {
+    const char = value[index]
+
+    if (escaped) {
+      escaped = false
+      continue
+    }
+
+    if (char === '\\') {
+      escaped = true
+      continue
+    }
+
+    if (char === '"') {
+      inString = !inString
+      continue
+    }
+
+    if (inString) {
+      continue
+    }
+
+    if (char === '{') {
+      depth += 1
+    }
+
+    if (char === '}') {
+      depth -= 1
+
+      if (depth === 0) {
+        return value.slice(start, index + 1)
+      }
+    }
+  }
+
+  return null
+}
+
 function parseJsonObject<T>(raw: string, errorMessage: string): T {
   const trimmed = raw.trim()
   const withoutFence = trimmed
@@ -421,23 +459,23 @@ function parseJsonObject<T>(raw: string, errorMessage: string): T {
   try {
     return JSON.parse(withoutFence) as T
   } catch {
-    const jsonStart = withoutFence.indexOf('{')
-    const jsonEnd = withoutFence.lastIndexOf('}')
+    const extracted = extractFirstJsonObject(withoutFence)
 
-    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+    if (!extracted) {
       throw new Error(errorMessage)
     }
 
-    return JSON.parse(withoutFence.slice(jsonStart, jsonEnd + 1)) as T
+    try {
+      return JSON.parse(extracted) as T
+    } catch (error) {
+      const details = error instanceof Error ? error.message : errorMessage
+      throw new Error(`${errorMessage}: ${details}`)
+    }
   }
 }
 
 function parseSeoResult(raw: string): SeoResult {
   return parseJsonObject<SeoResult>(raw, 'Keine gültigen SEO-Daten erhalten.')
-}
-
-function parseRewriteResult(raw: string): RewriteResult {
-  return parseJsonObject<RewriteResult>(raw, 'Keine gültigen Überarbeitungsdaten erhalten.')
 }
 
 function parseQAResult(raw: string): QAResult {
@@ -475,6 +513,8 @@ function buildRewriteInstructions({
     '- Der Text soll nicht künstlich locker wirken.',
     '- Keine absichtlichen Fehler einbauen.',
     language === 'Deutsch' ? '- Kein Gendern.' : '',
+    '- Gib nur den vollständig überarbeiteten Markdown-Text aus.',
+    '- Keine JSON-Ausgabe.',
     '- Keine Erklärung vor oder nach dem Ergebnis.',
     'Kontext:',
     `Zielgruppe: ${context.zielgruppe}`,
@@ -493,8 +533,6 @@ function buildRewriteInstructions({
     '- Haltung: lieber konkret kritisieren als neutral herumformulieren.',
     '- Der Text soll nicht wie ein neutraler KI-Ratgeber klingen, sondern wie ein technisch erfahrener Mensch, der das Thema aus der Praxis kennt, klar bewertet und ohne Marketing-Blabla erklärt.',
     '- Keine Floskeln wie "in der heutigen digitalen Welt", "innovative Lösung", "maßgeschneidert", "nahtlose Integration".',
-    'Antworte ausschließlich als valides JSON in exakt dieser Struktur:',
-    '{"bewertung_original":{"ki_typische_stellen":[],"hauptprobleme":[],"lesbarkeit":"kurze Einschätzung"},"ueberarbeiteter_text":"Hier steht der vollständig überarbeitete Text.","aenderungen":["kurze Beschreibung der wichtigsten Änderung"],"offene_punkte":["Nur ausfüllen, wenn konkrete Informationen fehlen. Sonst leeres Array."]}',
   ]
     .filter(Boolean)
     .join('\n')
@@ -640,12 +678,17 @@ async function runEditorialRewrite({
 }): Promise<EditorialRunResult> {
   const context = getEditorialContext({ collectionSlug, requestedMode, source, title })
   const language = locale === 'en' ? 'Englisch' : 'Deutsch'
-  const rewriteRaw = await runOpenAI({
-    instructions: buildRewriteInstructions({ context, language }),
-    input: ['Originaltext:', '"""', source, '"""'].join('\n'),
-  })
-  const rewrite = parseRewriteResult(rewriteRaw)
-  let rewrittenText = rewrite.ueberarbeiteter_text?.trim()
+  let rewrittenText = (
+    await runOpenAI({
+      instructions: buildRewriteInstructions({ context, language }),
+      input: ['Originaltext:', '"""', source, '"""'].join('\n'),
+    })
+  ).trim()
+
+  rewrittenText = rewrittenText
+    .replace(/^```(?:markdown|md)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim()
 
   if (!rewrittenText) {
     throw new Error('Die KI hat keinen überarbeiteten Text zurückgegeben.')
@@ -666,10 +709,23 @@ async function runEditorialRewrite({
     qa.freigabe !== true ||
     qa.muss_nochmal_ueberarbeitet_werden === true
   ) {
-    if ((qa.score ?? 0) < EDITORIAL_REPAIR_SCORE || repairs >= EDITORIAL_MAX_REPAIRS) {
+    if ((qa.score ?? 0) < EDITORIAL_REPAIR_SCORE) {
       throw new Error(
         `Automatische Überarbeitung braucht manuelle Prüfung. QA-Score: ${qa.score ?? 0}, SpacePC-Stil: ${qa.spacepc_stil_score ?? 0}. ${qa.gesamturteil ?? ''}`.trim(),
       )
+    }
+
+    if (repairs >= EDITORIAL_MAX_REPAIRS) {
+      return {
+        manualReviewReason:
+          `QA-Score: ${qa.score ?? 0}, SpacePC-Stil: ${qa.spacepc_stil_score ?? 0}. ${qa.gesamturteil ?? ''}`.trim(),
+        mode: context.mode,
+        modeLabel: context.modeLabel,
+        qa,
+        repairs,
+        requiresManualReview: true,
+        text: rewrittenText,
+      }
     }
 
     rewrittenText = (
@@ -677,7 +733,11 @@ async function runEditorialRewrite({
         instructions: buildRepairInstructions({ context, language }),
         input: buildRepairInput({ originalText: source, qa, rewrittenText }),
       })
-    ).trim()
+    )
+      .trim()
+      .replace(/^```(?:markdown|md)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim()
 
     if (!rewrittenText) {
       throw new Error('Die KI hat nach dem Repair keinen Text zurückgegeben.')
@@ -697,7 +757,6 @@ async function runEditorialRewrite({
     modeLabel: context.modeLabel,
     qa,
     repairs,
-    rewrite,
     text: rewrittenText,
   }
 }
@@ -826,9 +885,23 @@ async function runChunkedEditorialRewrite({
     (finalQA.spacepc_stil_score ?? 0) < SPACEPC_STYLE_APPROVAL_SCORE ||
     finalQA.muss_nochmal_ueberarbeitet_werden === true
   ) {
-    throw new Error(
-      `Gesamt-QA nach abschnittsweiser Überarbeitung braucht manuelle Prüfung. QA-Score: ${finalQA.score ?? 0}, SpacePC-Stil: ${finalQA.spacepc_stil_score ?? 0}. ${finalQA.gesamturteil ?? ''}`.trim(),
-    )
+    if ((finalQA.score ?? 0) < EDITORIAL_REPAIR_SCORE) {
+      throw new Error(
+        `Gesamt-QA nach abschnittsweiser Überarbeitung braucht manuelle Prüfung. QA-Score: ${finalQA.score ?? 0}, SpacePC-Stil: ${finalQA.spacepc_stil_score ?? 0}. ${finalQA.gesamturteil ?? ''}`.trim(),
+      )
+    }
+
+    return {
+      chunkCount: sections.length,
+      manualReviewReason:
+        `Gesamt-QA: ${finalQA.score ?? 0}, SpacePC-Stil: ${finalQA.spacepc_stil_score ?? 0}. ${finalQA.gesamturteil ?? ''}`.trim(),
+      mode: context.mode,
+      modeLabel: context.modeLabel,
+      qa: aggregateQAResults([...sectionResults.map((result) => result.qa), finalQA]),
+      repairs: sectionResults.reduce((sum, result) => sum + result.repairs, 0),
+      requiresManualReview: true,
+      text,
+    }
   }
 
   return {
@@ -1075,17 +1148,24 @@ export async function POST(request: Request) {
       const chunkInfo = editorialResult.chunkCount
         ? ` in ${editorialResult.chunkCount} Abschnitten`
         : ''
+      const reviewInfo = editorialResult.requiresManualReview
+        ? ` Manuelle Prüfung empfohlen: ${editorialResult.manualReviewReason ?? 'QA-Freigabe unter Schwellwert.'}`
+        : ''
 
       return NextResponse.json({
-        message: `Inhalt wurde als ${editorialResult.modeLabel}${chunkInfo} überarbeitet und per QA freigegeben (Score ${editorialResult.qa.score ?? 0}, Stil ${editorialResult.qa.spacepc_stil_score ?? 0}).`,
+        message: editorialResult.requiresManualReview
+          ? `Inhalt wurde als ${editorialResult.modeLabel}${chunkInfo} überarbeitet, aber nicht automatisch freigegeben.${reviewInfo}`
+          : `Inhalt wurde als ${editorialResult.modeLabel}${chunkInfo} überarbeitet und per QA freigegeben (Score ${editorialResult.qa.score ?? 0}, Stil ${editorialResult.qa.spacepc_stil_score ?? 0}).`,
         result: {
           content: syncedContent.content,
           contentMarkdown: syncedContent.contentMarkdown,
           chunkCount: editorialResult.chunkCount,
           editorialQa: editorialResult.qa,
           editorialMode: editorialResult.mode,
+          manualReviewReason: editorialResult.manualReviewReason,
           originalContentMarkdown: source,
           repairRuns: editorialResult.repairs,
+          requiresManualReview: editorialResult.requiresManualReview,
         },
       })
     }
